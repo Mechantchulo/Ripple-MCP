@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "ripple": {
+      "command": "python3",
+      "args": ["server/main.py"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "VIRTUAL_ENV": "${workspaceFolder}/.venv",
+        "PATH": "${workspaceFolder}/.venv/bin:${env:PATH}"
+      },
+      "alwaysAllow": [],
+      "disabled": false
+    }
+  }
+}
