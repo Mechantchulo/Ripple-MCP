@@ -1,0 +1,12 @@
+{
+  "workflow": "CI",
+  "status": "failing",
+  "commit": "a1b2c3d",
+  "pipeline_url": null,
+  "stages": [
+    {"name": "lint", "status": "passing"},
+    {"name": "tests", "status": "passing"},
+    {"name": "health-check", "status": "failing"}
+  ],
+  "error": "Health check stage failed: application reported database unavailable"
+}
