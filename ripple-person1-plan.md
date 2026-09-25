@@ -73,7 +73,7 @@ Transport: STDIO (Bob spawns the process).
 - MCP Python SDK is published as the `mcp` package on PyPI; `mcp[cli]` includes the `fastmcp` extras needed for `FastMCP`.
 - `python-dotenv` is used to load `.env` values in local development.
 
-**Status:** [ ] pending
+**Status:** [x] done
 
 ---
 
@@ -93,7 +93,7 @@ Transport: STDIO (Bob spawns the process).
 **Relevant Context:**
 - `health_tools.py` reads `RIPPLE_HEALTH_URL` via `os.getenv` with fallback to `http://127.0.0.1:8000/health`.
 
-**Status:** [ ] pending
+**Status:** [x] done
 
 ---
 
@@ -122,7 +122,7 @@ Transport: STDIO (Bob spawns the process).
 - `subprocess.run(..., capture_output=True, text=True, check=False)` — never `shell=True` with dynamic input
 - Error shape: `{"error": "not a git repository"}` etc.
 
-**Status:** [ ] pending
+**Status:** [x] done
 
 ---
 
@@ -153,7 +153,7 @@ Transport: STDIO (Bob spawns the process).
 - Using stdlib `urllib` keeps dependencies minimal; no `requests` needed.
 - `python-dotenv` loads `.env` at server startup in `main.py` — health_tools just reads env.
 
-**Status:** [ ] pending
+**Status:** [x] done
 
 ---
 
@@ -190,7 +190,7 @@ Transport: STDIO (Bob spawns the process).
 - `FastMCP` from `mcp` package: `from mcp.server.fastmcp import FastMCP`
 - STDIO run: `mcp.run(transport="stdio")` or just `mcp.run()` (default is stdio)
 
-**Status:** [ ] pending
+**Status:** [x] done
 
 ---
 
@@ -236,7 +236,7 @@ Transport: STDIO (Bob spawns the process).
 - `${workspaceFolder}` is the standard Bob/VS Code workspace folder variable
 - `alwaysAllow: []` — per security requirements, no tools auto-approved
 
-**Status:** [ ] pending
+**Status:** [x] done
 
 ---
 
@@ -263,7 +263,7 @@ Transport: STDIO (Bob spawns the process).
 - `mcp dev server/main.py` launches the MCP inspector (if mcp CLI installed) for interactive testing
 - Direct Python test: `python -c "from server.tools.git_tools import get_recent_changes; import json; print(json.dumps(get_recent_changes(), indent=2))"`
 
-**Status:** [ ] pending
+**Status:** [x] done
 
 ---
 
