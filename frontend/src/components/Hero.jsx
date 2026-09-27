@@ -1,67 +1,59 @@
 export default function Hero() {
   return (
-    <section id="overview" className="relative py-24 sm:py-32 px-4 sm:px-6 text-center overflow-hidden">
-      {/* Subtle background glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 flex items-center justify-center"
-      >
-      </div>
+    <section id="top" className="pt-20 pb-16 px-4 sm:px-6 border-b border-[#21262d]">
+      <div className="max-w-4xl mx-auto">
 
-      <div className="relative max-w-4xl mx-auto">
+        {/* Version badge */}
+        <div className="flex items-center gap-2 mb-8">
+          <span className="inline-flex items-center gap-1.5 text-xs font-mono text-[#8b949e] border border-[#30363d] px-2.5 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950]" />
+            v1.0 · 7 tools · MCP SDK v2.2
+          </span>
+        </div>
 
-        {/* Heading */}
-        <h1 className="text-5xl sm:text-7xl font-bold tracking-tight text-white mb-6">
+        {/* Headline */}
+        <h1 className="text-4xl sm:text-5xl font-bold text-[#e6edf3] tracking-tight leading-tight mb-4">
           Ripple
         </h1>
-
-        {/* Subtitle */}
-        <p className="text-xl sm:text-2xl text-gray-300 max-w-2xl mx-auto mb-4 leading-relaxed">
-          Give IBM Bob direct access to your project's operational context.
+        <p className="text-xl sm:text-2xl text-[#8b949e] font-normal mb-6 leading-snug">
+          Operational context for coding agents.
         </p>
 
-        {/* Supporting copy */}
-        <p className="text-base sm:text-lg text-gray-500 max-w-2xl mx-auto mb-12 leading-relaxed">
-          Ripple is an MCP-based developer operations gateway that connects IBM Bob to
-          project-specific sources such as Git, CI/CD, service health, deployment state
-          and project documentation.
+        {/* Core message */}
+        <p className="text-base text-[#8b949e] max-w-2xl leading-relaxed mb-3">
+          Ripple is an MCP-based operational gateway that gives coding agents like{' '}
+          <span className="text-[#e6edf3]">IBM Bob</span> access to the systems around the code —
+          Git history, CI pipelines, deployment state, service health, project documentation,
+          and GitHub pull requests.
+        </p>
+        <p className="text-sm text-[#484f58] max-w-xl leading-relaxed mb-10">
+          Bob understands the code. Ripple gives Bob operational awareness.
         </p>
 
-        {/* CTA buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        {/* CTAs */}
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href="#workflow"
+            className="inline-flex items-center gap-2 bg-[#238636] hover:bg-[#2ea043] text-[#e6edf3] text-sm font-medium px-4 py-2 rounded border border-[#2ea043] transition-colors"
+          >
+            View Demo Flow
+            <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8h10M9 4l4 4-4 4" />
+            </svg>
+          </a>
           <a
             href="https://github.com/Mechantchulo/Ripple-MCP"
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-2 bg-teal-500 hover:bg-teal-400 text-gray-950 font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
+            className="inline-flex items-center gap-2 text-sm text-[#8b949e] hover:text-[#e6edf3] px-4 py-2 rounded border border-[#30363d] hover:border-[#484f58] transition-colors"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.341-3.369-1.341-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.58 9.58 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+            <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
             </svg>
-            View on GitHub
-          </a>
-          <a
-            href="#solution"
-            className="inline-flex items-center gap-2 border border-gray-700 hover:border-teal-700 text-gray-300 hover:text-teal-400 font-semibold px-6 py-3 rounded-lg transition-colors text-sm"
-          >
-            How Ripple Works ↓
+            GitHub
           </a>
         </div>
 
-        {/* Positioning summary */}
-        <div className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-12 text-sm text-gray-500">
-          <div className="flex items-center gap-2">
-            <span className="text-gray-400 font-medium">Bob</span>
-            <span>=</span>
-            <span>Reasoning</span>
-          </div>
-          <div className="w-px h-4 bg-gray-700 hidden sm:block" />
-          <div className="flex items-center gap-2">
-            <span className="text-teal-400 font-medium">Ripple</span>
-            <span>=</span>
-            <span>Access</span>
-          </div>
-        </div>
       </div>
     </section>
   )
