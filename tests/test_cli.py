@@ -68,9 +68,18 @@ class RippleCliTests(unittest.TestCase):
             self.assertEqual(config["branch"], "feature/test")
             bob = json.loads(bob_file.read_text())
             self.assertEqual(bob["mcpServers"]["other"], {"command": "other-server"})
+            ripple_entry = bob["mcpServers"]["ripple"]
+            self.assertEqual(ripple_entry["command"], "ripple")
+            self.assertEqual(ripple_entry["args"], ["serve"])
+            # RIPPLE_PROJECT_ROOT must point at the temp project directory
             self.assertEqual(
-                bob["mcpServers"]["ripple"],
-                {"command": "ripple", "args": ["serve"]},
+                ripple_entry["env"]["RIPPLE_PROJECT_ROOT"],
+                str(root.resolve()),
+            )
+            # RIPPLE_GITHUB_REPO is populated from the detected remote
+            self.assertEqual(
+                ripple_entry["env"]["RIPPLE_GITHUB_REPO"],
+                "example/external-project",
             )
 
     def test_config_is_resolved_from_git_root_when_run_in_subdirectory(self) -> None:
