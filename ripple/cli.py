@@ -53,8 +53,12 @@ def cmd_init() -> None:
     )
     from ripple.auth import is_github_authenticated
 
-    # --- Detect project values ---
-    git_root = detect_git_root()
+    # Resolve the project root from CWD (not via get_project_root(), which
+    # would respect RIPPLE_PROJECT_ROOT — during init we always use CWD).
+    cwd = pathlib.Path.cwd().resolve()
+    git_root = detect_git_root(cwd=cwd)
+    project_root = git_root if git_root else cwd
+
     if git_root is None:
         print("Warning: current directory is not a Git repository.")
         print("Ripple will still initialise, but Git-based features will be limited.")
@@ -63,12 +67,12 @@ def cmd_init() -> None:
 
     github_repo = (
         existing.get("github_repo")
-        or detect_github_repo()
+        or detect_github_repo(cwd=project_root)
         or ""
     )
     branch = (
         existing.get("branch")
-        or detect_branch()
+        or detect_branch(cwd=project_root)
         or "main"
     )
     health_url = (
@@ -82,16 +86,16 @@ def cmd_init() -> None:
         "health_url": health_url,
     }
     save_project_config(config)
-    project_root = get_project_root()
 
     # --- Write / update .bob/mcp.json ---
     bob_config_path = project_root / ".bob" / "mcp.json"
-    _write_bob_mcp_json(bob_config_path)
+    _write_bob_mcp_json(bob_config_path, project_root=project_root, github_repo=github_repo)
 
     # --- Print summary ---
     print()
     print("Ripple initialized")
     print()
+    print(f"  Project root:     {project_root}")
     print(f"  Repository:       {github_repo or '(not detected)'}")
     print(f"  Branch:           {branch}")
     print(f"  Health endpoint:  {health_url}")
@@ -109,9 +113,18 @@ def cmd_init() -> None:
     print()
 
 
-def _write_bob_mcp_json(path: pathlib.Path) -> None:
+def _write_bob_mcp_json(
+    path: pathlib.Path,
+    project_root: pathlib.Path | None = None,
+    github_repo: str = "",
+) -> None:
     """
     Create or update .bob/mcp.json so Bob uses the global `ripple serve` command.
+
+    Writes RIPPLE_PROJECT_ROOT (and RIPPLE_GITHUB_REPO when known) into the env
+    block so that a globally-installed `ripple serve` (e.g. via pipx) always
+    targets this project directory — regardless of where pipx starts the process.
+
     Preserves any existing mcpServers entries that are not named 'ripple'.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -129,12 +142,22 @@ def _write_bob_mcp_json(path: pathlib.Path) -> None:
     if not isinstance(servers, dict):
         servers = {}
 
+    # Build the env block — always include RIPPLE_PROJECT_ROOT
+    env: dict[str, str] = {}
+    if project_root is not None:
+        env["RIPPLE_PROJECT_ROOT"] = str(project_root.resolve())
+    if github_repo:
+        env["RIPPLE_GITHUB_REPO"] = github_repo
+
     # Update only the ripple entry — preserve everything else
-    servers["ripple"] = {
+    ripple_entry: dict = {
         "command": "ripple",
         "args": ["serve"],
     }
+    if env:
+        ripple_entry["env"] = env
 
+    servers["ripple"] = ripple_entry
     existing["mcpServers"] = servers
     path.write_text(json.dumps(existing, indent=2) + "\n", encoding="utf-8")
 
@@ -169,6 +192,7 @@ def cmd_doctor() -> None:
         detect_git_root,
         get_github_repo,
         get_health_url,
+        get_project_root,
     )
     from ripple.auth import auth_status, get_github_token
 
@@ -183,46 +207,67 @@ def cmd_doctor() -> None:
     except ImportError:
         _fail("Ripple installation — package not found")
 
-    # 2. Git repository
-    git_root = detect_git_root()
+    # 2. Project root
+    project_root = get_project_root()
+    _ok(f"Project root             {project_root}")
+
+    # 3. Git repository
+    git_root = detect_git_root(cwd=project_root)
     if git_root:
-        _ok(f"Git repository detected  ({git_root})")
+        _ok(f"Git repository           detected  ({git_root})")
     else:
-        _warn("Not inside a Git repository")
+        _warn("Git repository           not detected")
 
-    # 3. Branch
-    branch = detect_branch() or "(none)"
-    _ok(f"Current branch           {branch}") if branch != "(none)" else _warn(f"Branch not detected")
+    # 4. Ripple config file
+    ripple_config = project_root / ".ripple" / "config.json"
+    if ripple_config.exists():
+        _ok(f"Ripple config            found  ({ripple_config.relative_to(project_root)})")
+    else:
+        _warn("Ripple config            not found  (run: ripple init)")
 
-    # 4. GitHub repository
+    # 5. Bob MCP config
+    bob_mcp = project_root / ".bob" / "mcp.json"
+    if bob_mcp.exists():
+        _ok(f"Bob MCP config           found  ({bob_mcp.relative_to(project_root)})")
+    else:
+        _warn("Bob MCP config           not found  (run: ripple init)")
+
+    # 6. Branch
+    branch = detect_branch(cwd=project_root) or "(none)"
+    if branch != "(none)":
+        _ok(f"Current branch           {branch}")
+    else:
+        _warn("Current branch           not detected")
+
+    # 7. GitHub repository
     repo = get_github_repo()
     if repo:
         _ok(f"GitHub repository        {repo}")
     else:
-        _warn("GitHub repository not configured  (run: ripple init)")
+        _warn("GitHub repository        not configured  (run: ripple init)")
 
-    # 5. GitHub authentication
+    # 8. GitHub authentication
     status = auth_status()
     if status["configured"]:
         _ok(f"GitHub auth              configured  via {status['source']}")
     else:
         _warn("GitHub auth              not configured  (run: ripple auth github)")
 
-    # 6. GitHub API connectivity
+    # 9. GitHub API connectivity
     token = get_github_token()
     _check_github_api(token)
 
-    # 7. Health URL config
+    # 10. Health URL config
     health_url = get_health_url()
     _ok(f"Health URL               {health_url}")
 
-    # 8. Health endpoint reachability
+    # 11. Health endpoint reachability
     _check_health_endpoint(health_url)
 
-    # 9. MCP server ready
+    # 12. MCP server ready
     _check_mcp_server()
 
-    # 10. Tool count
+    # 13. Tool count
     _check_tool_count()
 
     print()

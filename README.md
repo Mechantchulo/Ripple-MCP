@@ -417,6 +417,23 @@ ripple_<participant>_<description>.png
 
 ---
 
+## Privacy
+
+Ripple is a **local-first** tool. Here is exactly what stays local and what leaves your machine:
+
+| Data | Where it goes |
+|------|--------------|
+| Git history and diffs (`get_recent_changes`) | Processed entirely on your machine via the local `git` binary. Nothing is sent to any remote service. |
+| Project documentation (`search_project_docs`) | Read from your local `docs/` directory and scored in-process. No text leaves your machine. |
+| Service health checks (`check_service_health`) | An HTTP GET is sent to the configured health endpoint URL only (default: `http://localhost:8000/health`). No data is forwarded to Ripple or any third party. |
+| CI status (`get_ci_status`) | If a GitHub repo is configured, the GitHub Actions API is queried for pipeline status using only the repo slug and branch name. Falls back to a local fixture when no repo is configured. |
+| GitHub operations (`create_pull_request`, `get_pull_request_status`) | Only the data explicitly required by the GitHub REST API is transmitted: PR title, body, branch names, repo slug, and your authentication token (Bearer header). The token is never logged, printed, or included in any return value. |
+| Authentication tokens | Stored in `~/.config/ripple/auth.json` (Linux/macOS) or `%APPDATA%\ripple\auth.json` (Windows) with owner-only file permissions. Never written to the project directory, never committed, never logged. |
+
+**Summary:** Ripple does not phone home. It does not send telemetry. The only external network traffic it generates is (a) the configured health endpoint, (b) the GitHub API when a repo is configured, and (c) `api.github.com/rate_limit` for the connectivity check in `ripple doctor`.
+
+---
+
 ## Current MVP vs Future Integrations
 
 **Current MVP uses:**

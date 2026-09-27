@@ -8,8 +8,10 @@ Priority order for every setting:
   4. Hard-coded default                         — last resort
 
 This module is imported by the CLI and by all MCP tool modules.
-It operates relative to the CURRENT WORKING DIRECTORY, not the Ripple
-package installation directory.
+It operates relative to the resolved project root, which honours the
+RIPPLE_PROJECT_ROOT environment variable so that a globally-installed
+`ripple serve` (e.g. via pipx) always targets the developer's project,
+not the pipx installation directory.
 """
 
 from __future__ import annotations
@@ -23,18 +25,18 @@ import urllib.parse
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# Paths — all relative to CWD (the developer's project), not the Ripple pkg
+# Paths — resolved against project root, not the Ripple pkg install dir
 # ---------------------------------------------------------------------------
 
 CONFIG_FILE = pathlib.Path(".ripple") / "config.json"
 
 
 # ---------------------------------------------------------------------------
-# Git helpers (operate on CWD)
+# Git helpers (operate on a given directory)
 # ---------------------------------------------------------------------------
 
-def _git(args: list[str]) -> str | None:
-    """Run a git command in CWD. Returns stdout string or None on failure."""
+def _git(args: list[str], cwd: str | pathlib.Path | None = None) -> str | None:
+    """Run a git command in *cwd* (defaults to CWD). Returns stdout or None on failure."""
     try:
         result = subprocess.run(
             ["git"] + args,
@@ -42,35 +44,36 @@ def _git(args: list[str]) -> str | None:
             text=True,
             check=False,
             timeout=5,
+            cwd=str(cwd) if cwd is not None else None,
         )
         return result.stdout.strip() if result.returncode == 0 else None
     except Exception:  # noqa: BLE001
         return None
 
 
-def detect_git_root() -> pathlib.Path | None:
-    """Return the root of the git repository containing CWD, or None."""
-    out = _git(["rev-parse", "--show-toplevel"])
+def detect_git_root(cwd: str | pathlib.Path | None = None) -> pathlib.Path | None:
+    """Return the root of the git repository containing *cwd* (or CWD), or None."""
+    out = _git(["rev-parse", "--show-toplevel"], cwd=cwd)
     return pathlib.Path(out) if out else None
 
 
-def detect_branch() -> str | None:
+def detect_branch(cwd: str | pathlib.Path | None = None) -> str | None:
     """Return the current branch name, or None if detached / no repo."""
     # symbolic-ref also works for a newly initialized repository before its
     # first commit. Fall back to rev-parse for older Git versions.
-    out = _git(["symbolic-ref", "--quiet", "--short", "HEAD"])
+    out = _git(["symbolic-ref", "--quiet", "--short", "HEAD"], cwd=cwd)
     if not out:
-        out = _git(["rev-parse", "--abbrev-ref", "HEAD"])
+        out = _git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd)
     return out if out and out != "HEAD" else None
 
 
-def detect_github_repo() -> str | None:
+def detect_github_repo(cwd: str | pathlib.Path | None = None) -> str | None:
     """
     Derive owner/repo from the git remote URL.
     Handles SSH (git@github.com:owner/repo.git) and HTTPS forms.
     Returns None on any failure.
     """
-    url = _git(["remote", "get-url", "origin"])
+    url = _git(["remote", "get-url", "origin"], cwd=cwd)
     if not url:
         return None
     slug: str | None = None
@@ -126,24 +129,24 @@ def save_project_config(data: dict[str, Any]) -> None:
 def get_github_repo() -> str | None:
     """
     Resolved GitHub repo slug (owner/repo).
-    Priority: env var → project config → git remote auto-detection.
+    Priority: env var → project config → git remote auto-detection from project root.
     """
     return (
         os.environ.get("RIPPLE_GITHUB_REPO")
         or load_project_config().get("github_repo")
-        or detect_github_repo()
+        or detect_github_repo(cwd=get_project_root())
     )
 
 
 def get_github_branch() -> str:
     """
     Resolved branch name.
-    Priority: env var → project config → current git branch → "main".
+    Priority: env var → project config → current git branch from project root → "main".
     """
     return (
         os.environ.get("RIPPLE_GITHUB_BRANCH")
         or load_project_config().get("branch")
-        or detect_branch()
+        or detect_branch(cwd=get_project_root())
         or "main"
     )
 
@@ -162,9 +165,22 @@ def get_health_url() -> str:
 
 def get_project_root() -> pathlib.Path:
     """
-    The root of the current project's git repository.
-    Falls back to CWD if not in a git repo.
+    Resolve the current project root.
+
+    Priority:
+      1. RIPPLE_PROJECT_ROOT environment variable (must exist on disk)
+      2. Git repository root detected from CWD
+      3. CWD fallback
+
+    This ensures a globally-installed `ripple serve` (e.g. via pipx) always
+    operates on the developer's project, not the pipx install directory.
     """
+    env_root = os.environ.get("RIPPLE_PROJECT_ROOT", "").strip()
+    if env_root:
+        candidate = pathlib.Path(env_root)
+        if candidate.is_dir():
+            return candidate.resolve()
+        # env var set but path doesn't exist — fall through to git detection
     return detect_git_root() or pathlib.Path.cwd()
 
 
