@@ -2,7 +2,12 @@
   "mcpServers": {
     "ripple": {
       "command": "ripple",
-      "args": ["serve"]
+      "args": [
+        "serve"
+      ],
+      "env": {
+        "RIPPLE_GITHUB_REPO": "Mechantchulo/Ripple-MCP"
+      }
     }
   }
 }
