@@ -1,36 +1,36 @@
 const statuses = [
   {
-    key: 'CI',
-    value: 'failing',
-    detail: 'tests · erick',
-    dot: 'bg-[#f85149]',
-    text: 'text-[#f85149]',
+    key: 'Installation',
+    value: 'global',
+    detail: 'pipx · one time',
+    dot: 'bg-[#3fb950]',
+    text: 'text-[#3fb950]',
   },
   {
-    key: 'Deployment',
-    value: 'degraded',
-    detail: 'production · deploy-14',
-    dot: 'bg-[#d29922]',
-    text: 'text-[#d29922]',
-  },
-  {
-    key: 'Health',
-    value: '503',
-    detail: '/health · db unavailable',
-    dot: 'bg-[#f85149]',
-    text: 'text-[#f85149]',
-  },
-  {
-    key: 'Branch',
-    value: 'erick',
-    detail: 'b8c4e7a · 1 ahead',
+    key: 'Project config',
+    value: 'local',
+    detail: '.ripple/config.json',
     dot: 'bg-[#58a6ff]',
     text: 'text-[#58a6ff]',
   },
   {
-    key: 'PR',
-    value: 'open',
-    detail: '#10 · ready for review',
+    key: 'GitHub auth',
+    value: 'secure',
+    detail: 'hidden input · outside repo',
+    dot: 'bg-[#bc8cff]',
+    text: 'text-[#bc8cff]',
+  },
+  {
+    key: 'Transport',
+    value: 'STDIO',
+    detail: 'any compatible client',
+    dot: 'bg-[#d29922]',
+    text: 'text-[#d29922]',
+  },
+  {
+    key: 'Tools',
+    value: '7 ready',
+    detail: 'Git · CI · health · PRs',
     dot: 'bg-[#3fb950]',
     text: 'text-[#3fb950]',
   },
@@ -42,9 +42,9 @@ export default function StatusStrip() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-0">
         {/* Label row */}
         <div className="flex items-center gap-2 pt-5 pb-3">
-          <span className="text-[#484f58] text-xs font-mono uppercase tracking-wider">live demo state</span>
+          <span className="text-[#484f58] text-xs font-mono uppercase tracking-wider">runtime model</span>
           <span className="text-[#21262d] text-xs">—</span>
-          <span className="text-[#484f58] text-xs">Mechantchulo/Ripple-MCP</span>
+          <span className="text-[#484f58] text-xs">global implementation · project-specific context</span>
         </div>
 
         {/* Status row */}
@@ -66,7 +66,7 @@ export default function StatusStrip() {
 
         {/* Caption */}
         <p className="text-[#484f58] text-xs font-mono pb-5">
-          $ ripple status — incident active · CI failing · health degraded · PR #10 open
+          $ ripple doctor — installation OK · MCP ready · 7 tools registered
         </p>
       </div>
     </section>

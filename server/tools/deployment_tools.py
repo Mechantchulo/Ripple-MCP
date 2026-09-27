@@ -6,21 +6,14 @@ Never raises; always returns a structured dict.
 """
 
 import json
-import pathlib
 from typing import Any
 
-# Resolve project root from this file's location:
-#   __file__  = .../Ripple-MCP/server/tools/deployment_tools.py
-#   parents[0] = .../server/tools/
-#   parents[1] = .../server/
-#   parents[2] = .../Ripple-MCP/   ← project root
-_PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
-_DEPLOYMENT_PATH = _PROJECT_ROOT / "demo_data" / "deployment.json"
+from ripple.config import get_project_root
 
 
 def get_deployment_info() -> dict[str, Any]:
     """
-    Retrieve the latest simulated deployment record for the demo project.
+    Retrieve the latest deployment record for the current project.
 
     Reads demo_data/deployment.json and returns its contents.
 
@@ -29,10 +22,11 @@ def get_deployment_info() -> dict[str, Any]:
 
     Returns {"error": "<reason>"} on failure instead of raising.
     """
+    deployment_path = get_project_root() / "demo_data" / "deployment.json"
     try:
-        raw = _DEPLOYMENT_PATH.read_text(encoding="utf-8")
+        raw = deployment_path.read_text(encoding="utf-8")
     except FileNotFoundError:
-        return {"error": f"Deployment data not found: {_DEPLOYMENT_PATH}"}
+        return {"error": f"Deployment data not found: {deployment_path}"}
     except OSError as exc:
         return {"error": f"Could not read deployment data: {exc}"}
 

@@ -31,7 +31,7 @@ export default function LocalMCP() {
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-teal-400 mt-0.5">›</span>
-                Works on any developer machine that has the repo
+                Works from any project after one global installation
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-teal-400 mt-0.5">›</span>

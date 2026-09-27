@@ -3,30 +3,20 @@ ci_tools.py — Ripple MCP
 Provides get_ci_status(): tries the GitHub Actions API first, falls back to
 demo_data/ci_status.json when the API is unavailable or not configured.
 
-Environment variables (all optional):
-    RIPPLE_GITHUB_REPO    — owner/repo slug, e.g. "Mechantchulo/Ripple-MCP"
-                            Falls back to reading the git remote automatically.
-    RIPPLE_GITHUB_TOKEN   — Personal access token for private repos / higher rate limit.
-                            NEVER logged or returned in tool output.
-    RIPPLE_GITHUB_BRANCH  — Branch to query (default: "erick")
+Configuration is resolved via ripple.config (CWD-relative) and ripple.auth.
+Environment variables (RIPPLE_GITHUB_REPO, RIPPLE_GITHUB_TOKEN,
+RIPPLE_GITHUB_BRANCH) are still honoured as overrides.
 
 Never raises. Always returns a structured dict.
 """
 
 import json
-import os
-import pathlib
-import subprocess
 import urllib.error
 import urllib.request
 from typing import Any
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-
-_PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
-_CI_STATUS_PATH = _PROJECT_ROOT / "demo_data" / "ci_status.json"
+from ripple.auth import get_github_token
+from ripple.config import get_github_branch, get_github_repo, get_project_root
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -35,53 +25,24 @@ _CI_STATUS_PATH = _PROJECT_ROOT / "demo_data" / "ci_status.json"
 
 def _read_fixture() -> dict[str, Any]:
     """Read and return the local CI status fixture. Never raises."""
+    ci_status_path = get_project_root() / "demo_data" / "ci_status.json"
     try:
-        raw = _CI_STATUS_PATH.read_text(encoding="utf-8")
+        raw = ci_status_path.read_text(encoding="utf-8")
     except FileNotFoundError:
-        return {"source": "demo-fixture", "error": f"CI status fixture not found: {_CI_STATUS_PATH}"}
+        return {"source": "project-fixture", "error": f"CI status fixture not found: {ci_status_path}"}
     except OSError as exc:
-        return {"source": "demo-fixture", "error": f"Could not read CI fixture: {exc}"}
+        return {"source": "project-fixture", "error": f"Could not read CI fixture: {exc}"}
 
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
-        return {"source": "demo-fixture", "error": f"CI fixture is not valid JSON: {exc}"}
+        return {"source": "project-fixture", "error": f"CI fixture is not valid JSON: {exc}"}
 
     if not isinstance(data, dict):
-        return {"source": "demo-fixture", "error": "CI fixture has unexpected format (expected JSON object)"}
+        return {"source": "project-fixture", "error": "CI fixture has unexpected format (expected JSON object)"}
 
-    data.setdefault("source", "demo-fixture")
+    data.setdefault("source", "project-fixture")
     return data
-
-
-def _detect_github_repo() -> str | None:
-    """
-    Attempt to derive owner/repo from the git remote URL.
-    Handles both SSH (git@github.com:owner/repo.git) and HTTPS forms.
-    Returns None on any failure.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "remote", "get-url", "origin"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            cwd=_PROJECT_ROOT,
-        )
-        if result.returncode != 0:
-            return None
-        url = result.stdout.strip()
-        # SSH: git@github.com:owner/repo.git
-        if url.startswith("git@github.com:"):
-            slug = url[len("git@github.com:"):]
-        # HTTPS: https://github.com/owner/repo.git or https://github.com/owner/repo
-        elif "github.com/" in url:
-            slug = url.split("github.com/", 1)[1]
-        else:
-            return None
-        return slug.removesuffix(".git")
-    except Exception:  # noqa: BLE001
-        return None
 
 
 def _fetch_github_ci_status(repo: str, branch: str, token: str | None) -> dict[str, Any]:
@@ -136,7 +97,7 @@ def _fetch_github_ci_status(repo: str, branch: str, token: str | None) -> dict[s
 
     error_msg: str | None = None
     if ripple_status == "failing":
-        error_msg = f"Demo app test suite failed (conclusion: {conclusion})"
+        error_msg = f"Workflow failed (conclusion: {conclusion})"
     elif ripple_status == "in-progress":
         error_msg = None
 
@@ -158,12 +119,12 @@ def _fetch_github_ci_status(repo: str, branch: str, token: str | None) -> dict[s
 
 def get_ci_status() -> dict[str, Any]:
     """
-    Retrieve the latest CI pipeline state for the demo project.
+    Retrieve the latest CI pipeline state for the current project.
 
     Attempts to fetch live data from the GitHub Actions API using:
         RIPPLE_GITHUB_REPO   (owner/repo; auto-detected from git remote if absent)
         RIPPLE_GITHUB_TOKEN  (optional; improves rate limits on private repos)
-        RIPPLE_GITHUB_BRANCH (default: "erick")
+        RIPPLE_GITHUB_BRANCH (current branch or "main" by default)
 
     Falls back to demo_data/ci_status.json when:
         - RIPPLE_GITHUB_REPO cannot be determined
@@ -174,15 +135,15 @@ def get_ci_status() -> dict[str, Any]:
     Returns a dict containing CI workflow status, associated commit,
     stage results, and failure details.  Never raises.
     """
-    repo: str | None = os.environ.get("RIPPLE_GITHUB_REPO") or _detect_github_repo()
-    branch: str = os.environ.get("RIPPLE_GITHUB_BRANCH", "erick")
+    repo = get_github_repo()
+    branch = get_github_branch()
     # Token is read but NEVER echoed back in any return value.
-    token: str | None = os.environ.get("RIPPLE_GITHUB_TOKEN") or None
+    token = get_github_token()
 
     if not repo:
         # No repo configured and auto-detection failed — use fixture.
         data = _read_fixture()
-        data["_fallback_reason"] = "RIPPLE_GITHUB_REPO not set and git remote auto-detection failed"
+        data["_fallback_reason"] = "GitHub repository is not configured and could not be auto-detected"
         return data
 
     try:

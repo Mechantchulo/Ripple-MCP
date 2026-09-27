@@ -1,107 +1,85 @@
-const specs = [
-  { label: 'Protocol', value: 'Model Context Protocol (MCP)', note: 'Tool call standard' },
-  { label: 'Transport', value: 'STDIO', note: 'Bob spawns Ripple as a child process' },
-  { label: 'Server', value: 'Python 3.11+ / mcp SDK v2.2', note: 'server/main.py' },
-  { label: 'Tool behaviour', value: 'Deterministic', note: 'No LLM inside Ripple' },
-  { label: 'Auth', value: 'Explicit approval', note: 'alwaysAllow: [] — Bob asks before each call' },
-  { label: 'Tools registered', value: '7', note: 'All in server/tools/' },
-]
-
-const sources = [
-  { label: 'GitHub Actions', sub: 'CI status' },
-  { label: 'Git (local)', sub: 'Recent changes' },
-  { label: 'Health API', sub: 'Service health' },
-  { label: 'Deployment', sub: 'Deploy state' },
-  { label: 'Markdown docs', sub: 'Project docs' },
-  { label: 'GitHub REST', sub: 'Pull requests' },
-]
-
 export default function Architecture() {
   return (
-    <section id="architecture" className="py-16 px-4 sm:px-6 border-b border-[#21262d]">
-      <div className="max-w-5xl mx-auto">
-
-        {/* Section header */}
-        <div className="mb-10">
-          <p className="text-[#484f58] text-xs font-mono uppercase tracking-widest mb-2">architecture</p>
-          <h2 className="text-2xl font-bold text-[#e6edf3] mb-3">
-            How Ripple fits into the stack
+    <section id="architecture" className="border-b border-[#21262d] px-4 py-16 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-10 max-w-2xl">
+          <p className="mb-2 text-xs font-mono uppercase tracking-widest text-[#58a6ff]">Architecture</p>
+          <h2 className="mb-3 text-3xl font-bold tracking-tight text-[#f0f6fc]">
+            Global engine. Local repository context.
           </h2>
-          <p className="text-sm text-[#8b949e] max-w-xl leading-relaxed">
-            IBM Bob is the agent. Ripple is the MCP server. Bob decides which tools to invoke and when —
-            Ripple only responds, never initiates.
+          <p className="text-sm leading-relaxed text-[#8b949e] sm:text-base">
+            Ripple is not another AI chatbot. It is a deterministic, fast MCP server executing native Git commands, HTTP health checks, and local file searches.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
-
-          {/* Flow diagram */}
-          <div className="border border-[#21262d] rounded bg-[#161b22]">
-            <div className="px-4 py-2.5 border-b border-[#21262d] flex items-center gap-2">
-              <div className="flex gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#21262d]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#21262d]" />
-                <span className="w-2.5 h-2.5 rounded-full bg-[#21262d]" />
-              </div>
-              <span className="text-[#484f58] text-xs font-mono ml-1">ripple-architecture.txt</span>
+        {/* Diagram Card */}
+        <div className="rounded-lg border border-[#30363d] bg-[#010409] p-6 sm:p-8">
+          <div className="grid gap-8 lg:grid-cols-3 items-center">
+            {/* Box 1: Client */}
+            <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-5 text-center">
+              <span className="inline-block rounded border border-[#1f6feb]/30 bg-[#1f6feb]/10 px-2 py-0.5 text-[11px] font-mono text-[#58a6ff] mb-2">
+                Agent / MCP Client
+              </span>
+              <h3 className="text-base font-bold text-[#f0f6fc]">IBM Bob / Claude / Cursor</h3>
+              <p className="mt-2 text-xs text-[#8b949e]">
+                Reasons over user prompts, picks which Ripple tools to call, and plans fixes.
+              </p>
             </div>
-            <div className="p-5 font-mono text-sm space-y-1">
-              <div className="text-center">
-                <span className="text-[#8b949e] text-xs">Developer</span>
-              </div>
-              <div className="text-center text-[#30363d] text-xs">│</div>
-              <div className="text-center text-[#30363d] text-xs">▼  prompt</div>
-              <div className="text-center">
-                <span className="text-[#e6edf3] bg-[#0d419d] border border-[#1f6feb] px-4 py-1 rounded text-xs inline-block">
-                  IBM Bob
-                </span>
-              </div>
-              <div className="text-center text-[#30363d] text-xs">│</div>
-              <div className="text-center text-[#484f58] text-xs">MCP tool call · STDIO</div>
-              <div className="text-center text-[#30363d] text-xs">▼</div>
-              <div className="text-center">
-                <span className="text-[#e6edf3] bg-[#161b22] border border-[#30363d] px-4 py-1 rounded text-xs inline-block">
-                  Ripple MCP Server
-                </span>
-              </div>
-              <div className="text-center text-[#30363d] text-xs">│</div>
-              <div className="text-center text-[#30363d] text-xs">▼  dispatches to</div>
-              {/* Sources grid */}
-              <div className="flex flex-wrap justify-center gap-1.5 pt-1">
-                {sources.map(s => (
-                  <div key={s.label} className="border border-[#21262d] rounded px-2.5 py-1.5 text-center">
-                    <div className="text-[#8b949e] text-xs">{s.label}</div>
-                    <div className="text-[#484f58] text-xs">{s.sub}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
 
-          {/* Specs */}
-          <div className="space-y-0 border border-[#21262d] rounded overflow-hidden">
-            {specs.map((s, i) => (
-              <div
-                key={s.label}
-                className={`flex items-start gap-4 px-4 py-3 bg-[#161b22] ${i < specs.length - 1 ? 'border-b border-[#21262d]' : ''}`}
-              >
-                <div className="w-28 shrink-0">
-                  <span className="text-[#484f58] text-xs font-mono">{s.label}</span>
-                </div>
-                <div>
-                  <div className="text-[#e6edf3] text-xs font-mono">{s.value}</div>
-                  <div className="text-[#484f58] text-xs mt-0.5">{s.note}</div>
-                </div>
+            {/* Middle: MCP STDIO Protocol */}
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="flex items-center gap-2 text-xs font-mono text-[#8b949e] mb-1">
+                <span>STDIO Protocol</span>
               </div>
-            ))}
-            <div className="px-4 py-3 bg-[#0d1117] border-t border-[#21262d]">
-              <p className="text-[#484f58] text-xs font-mono leading-relaxed">
-                # Ripple does not diagnose, decide, or initiate.<br />
-                # It retrieves. Bob reasons.
+              <div className="w-full flex items-center justify-center">
+                <span className="hidden lg:block h-0.5 w-16 bg-[#30363d]" />
+                <span className="rounded-md border border-[#238636] bg-[#0d2818] px-3 py-1 font-mono text-xs font-bold text-[#3fb950]">
+                  ripple serve
+                </span>
+                <span className="hidden lg:block h-0.5 w-16 bg-[#30363d]" />
+              </div>
+              <span className="mt-2 text-[11px] font-mono text-[#484f58]">JSON-RPC 2.0 via STDIO</span>
+            </div>
+
+            {/* Box 3: Sources */}
+            <div className="rounded-lg border border-[#30363d] bg-[#161b22] p-5 text-center">
+              <span className="inline-block rounded border border-[#238636]/30 bg-[#238636]/10 px-2 py-0.5 text-[11px] font-mono text-[#3fb950] mb-2">
+                Project Operations
+              </span>
+              <h3 className="text-base font-bold text-[#f0f6fc]">Operational Sources</h3>
+              <p className="mt-2 text-xs text-[#8b949e]">
+                Git repository · FastAPI health check · GitHub Actions CI · Markdown docs · GitHub PR API
               </p>
             </div>
           </div>
 
+          {/* Three Key Architectural Pillars */}
+          <div className="mt-8 grid gap-4 border-t border-[#21262d] pt-8 sm:grid-cols-3">
+            <div>
+              <h4 className="font-mono text-xs font-semibold uppercase tracking-wider text-[#e6edf3]">
+                1. Single Global Install
+              </h4>
+              <p className="mt-2 text-xs leading-relaxed text-[#8b949e]">
+                Install once via <code className="text-[#c9d1d9]">pipx</code>. You don't need a virtualenv or clone inside every project.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-mono text-xs font-semibold uppercase tracking-wider text-[#e6edf3]">
+                2. Project-Local Scoping
+              </h4>
+              <p className="mt-2 text-xs leading-relaxed text-[#8b949e]">
+                Each workspace gets non-secret settings in <code className="text-[#c9d1d9]">.ripple/config.json</code> and <code className="text-[#c9d1d9]">.bob/mcp.json</code>.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-mono text-xs font-semibold uppercase tracking-wider text-[#e6edf3]">
+                3. Ironclad Token Security
+              </h4>
+              <p className="mt-2 text-xs leading-relaxed text-[#8b949e]">
+                Secrets are stored in <code className="text-[#c9d1d9]">~/.config/ripple/auth.json</code> with 0600 permissions, never in repo or git history.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </section>

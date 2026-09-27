@@ -1,43 +1,39 @@
 const steps = [
   {
     n: '1',
-    title: 'Clone the repository',
-    code: `git clone https://github.com/Mechantchulo/Ripple-MCP.git\ncd Ripple-MCP`,
+    title: 'Install Ripple globally',
+    code: `pipx install git+https://github.com/Mechantchulo/Ripple-MCP.git`,
+    note: 'Run this once. The ripple command is then available from every project.',
   },
   {
     n: '2',
-    title: 'Create and activate a virtual environment',
-    code: `python3 -m venv .venv\nsource .venv/bin/activate   # macOS / Linux\n# Windows: .venv\\Scripts\\Activate.ps1`,
+    title: 'Initialize the current project',
+    code: `cd my-project\nripple init`,
+    note: 'Creates .ripple/config.json and safely adds Ripple to .bob/mcp.json.',
   },
   {
     n: '3',
-    title: 'Install dependencies',
-    code: `pip install -r requirements.txt`,
-    note: 'Installs: mcp[cli]>=1.0  and  python-dotenv>=1.0',
+    title: 'Authenticate GitHub writes',
+    code: `ripple auth github`,
+    note: 'The token prompt is hidden. The credential is stored outside the repository.',
   },
   {
     n: '4',
-    title: 'Configure environment (optional)',
-    code: `cp .env.example .env\n# Edit .env to change the health endpoint URL if needed`,
-    note: 'Default health URL: http://127.0.0.1:8000/health , set via RIPPLE_HEALTH_URL',
+    title: 'Run the health check',
+    code: `ripple doctor`,
+    note: 'Checks Git, GitHub connectivity, authentication, health endpoint, MCP readiness, and all seven tools.',
   },
   {
     n: '5',
-    title: 'Open in IBM Bob IDE',
-    code: null,
-    note: 'Open this project folder in the IBM Bob IDE. Bob automatically reads .bob/mcp.json and starts the Ripple MCP server as a child process over STDIO.',
+    title: 'Connect an MCP client',
+    code: `ripple serve`,
+    note: 'IBM Bob reads the generated config automatically. Other STDIO MCP clients can launch the same command.',
   },
   {
     n: '6',
     title: 'Verify connection',
     code: null,
-    note: 'Open Bob → Settings → MCP tab. Confirm "ripple" appears as connected. Expand it, all five tools should be listed.',
-  },
-  {
-    n: '7',
-    title: 'Use Bob normally',
-    code: null,
-    note: 'Ask Bob about your project. When Bob calls a Ripple tool you will be prompted to approve. Tool approval is explicit, alwaysAllow is empty in .bob/mcp.json.',
+    note: 'Confirm ripple is connected and all seven project-aware tools are listed.',
   },
 ]
 
@@ -52,8 +48,8 @@ export default function GetAccess() {
             Use Ripple
           </h2>
           <p className="text-gray-400 max-w-2xl text-base leading-relaxed">
-            Ripple runs as a local MCP server. No separate installation or service, Bob starts it automatically
-            from the project workspace.
+            Install Ripple once with pipx, initialize each project, and let any STDIO MCP client launch it
+            with <code className="text-teal-300">ripple serve</code>.
           </p>
         </div>
 

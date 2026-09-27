@@ -7,6 +7,8 @@ No LLM calls. No GitHub API. Safe subprocess usage (shell=False throughout).
 import subprocess
 from typing import Any
 
+from ripple.config import get_project_root
+
 
 def _git(args: list[str], cwd: str | None = None) -> tuple[str, str, int]:
     """Run a git command and return (stdout, stderr, returncode)."""
@@ -35,23 +37,25 @@ def get_recent_changes(max_commits: int = 5) -> dict[str, Any]:
 
     Returns {"error": "<reason>"} on failure instead of raising.
     """
+    project_root = str(get_project_root())
+
     # Verify git is available
-    _, err, rc = _git(["--version"])
+    _, err, rc = _git(["--version"], cwd=project_root)
     if rc != 0:
         return {"error": "git is not installed or not on PATH"}
 
     # Verify this is a git repository
-    _, err, rc = _git(["rev-parse", "--is-inside-work-tree"])
+    _, err, rc = _git(["rev-parse", "--is-inside-work-tree"], cwd=project_root)
     if rc != 0:
         return {"error": "not a git repository"}
 
     # Verify there is at least one commit
-    _, err, rc = _git(["rev-parse", "HEAD"])
+    _, err, rc = _git(["rev-parse", "HEAD"], cwd=project_root)
     if rc != 0:
         return {"error": "no commits found in repository"}
 
     # --- Latest commit ---
-    log_out, _, rc = _git(["log", "-1", "--format=%H%x00%s%x00%an%x00%ai"])
+    log_out, _, rc = _git(["log", "-1", "--format=%H%x00%s%x00%an%x00%ai"], cwd=project_root)
     if rc != 0 or not log_out:
         return {"error": "failed to read latest commit"}
 
@@ -63,7 +67,7 @@ def get_recent_changes(max_commits: int = 5) -> dict[str, Any]:
 
     # --- Changed files in latest commit ---
     files_out, _, rc = _git(
-        ["diff-tree", "--no-commit-id", "-r", "--name-only", "HEAD"]
+        ["diff-tree", "--no-commit-id", "-r", "--name-only", "HEAD"], cwd=project_root
     )
     if rc != 0:
         changed_files: list[str] = []
@@ -71,11 +75,11 @@ def get_recent_changes(max_commits: int = 5) -> dict[str, Any]:
         changed_files = [f for f in files_out.splitlines() if f]
 
     # --- Diff excerpt (first 60 lines) ---
-    diff_out, _, rc = _git(["diff", "HEAD~1", "HEAD"])
+    diff_out, _, rc = _git(["diff", "HEAD~1", "HEAD"], cwd=project_root)
     if rc != 0 or not diff_out:
         # Fall back: diff against empty tree for the first commit
         empty_tree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-        diff_out, _, _ = _git(["diff", empty_tree, "HEAD"])
+        diff_out, _, _ = _git(["diff", empty_tree, "HEAD"], cwd=project_root)
 
     diff_lines = diff_out.splitlines()
     diff_excerpt = "\n".join(diff_lines[:60])
@@ -84,7 +88,8 @@ def get_recent_changes(max_commits: int = 5) -> dict[str, Any]:
 
     # --- Recent commits ---
     recent_out, _, rc = _git(
-        ["log", f"-{max_commits}", "--format=%H%x00%s%x00%an%x00%ai"]
+        ["log", f"-{max(1, min(max_commits, 100))}", "--format=%H%x00%s%x00%an%x00%ai"],
+        cwd=project_root,
     )
     recent_commits: list[dict[str, str]] = []
     if rc == 0 and recent_out:

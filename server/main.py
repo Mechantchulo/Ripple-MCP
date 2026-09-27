@@ -8,19 +8,11 @@ Tool ownership:
   GitHub PR: create_pull_request, get_pull_request_status
 """
 
-import sys
-import os
-
-# Ensure the project root is on sys.path when the script is run directly
-# (e.g. python3 server/main.py or via Bob's MCP stdio spawn).
-_project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
-
 from dotenv import load_dotenv
+from ripple.config import get_project_root
 
 # Load .env before any tool module reads environment variables
-load_dotenv()
+load_dotenv(dotenv_path=get_project_root() / ".env")
 
 from mcp.server.mcpserver import MCPServer
 
@@ -37,7 +29,7 @@ from server.tools.github_tools import (
 mcp = MCPServer(
     name="ripple",
     description=(
-        "Ripple — project-specific developer tools for IBM Bob. "
+        "Ripple — project-specific developer tools for MCP clients. "
         "Provides access to Git history, service health, CI status, "
         "deployment information, project documentation, and GitHub pull requests."
     ),
@@ -70,21 +62,20 @@ def get_recent_changes(max_commits: int = 5) -> dict:
 @mcp.tool(
     name="check_service_health",
     description=(
-        "Checks the running demo application's health endpoint and returns "
+        "Checks the current project's configured health endpoint and returns "
         "current availability, HTTP status, and any reported error. "
         "Use when checking whether the application is currently healthy, "
         "degraded, or unreachable — particularly during incident investigation, "
         "after a deployment, or when the service is behaving unexpectedly. "
         "Optional parameter: url — override the health endpoint URL; "
-        "defaults to the RIPPLE_HEALTH_URL environment variable "
-        "(http://127.0.0.1:8000/health if not set)."
+        "defaults to the project configuration or RIPPLE_HEALTH_URL override."
     ),
 )
 def check_service_health(url: str = "") -> dict:
     """
     Args:
-        url: Override the health endpoint URL. Leave empty to use RIPPLE_HEALTH_URL
-             or the default http://127.0.0.1:8000/health.
+        url: Override the health endpoint URL. Leave empty to use project
+             configuration or the RIPPLE_HEALTH_URL override.
     """
     return _check_service_health(url=url or None)
 

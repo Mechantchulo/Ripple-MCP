@@ -1,182 +1,124 @@
-const steps = [
+import CopyButton from './CopyButton'
+
+const INCIDENT_PROMPT =
+  'The latest deployment is unhealthy. Investigate what happened, find the root cause, and tell me what to fix.'
+
+const STEPS = [
   {
-    index: '01',
-    label: 'Incident detected',
-    detail: 'Health check returns 503 · deployment marked degraded',
-    prompt: 'The latest deployment is unhealthy. Investigate what happened.',
-    isPrompt: true,
+    step: 1,
+    title: 'Service Health Check',
+    tool: 'check_service_health()',
+    finding: 'Endpoint returns HTTP 503 Degraded. Database connection refused.',
+    tag: '503 DEGRADED',
+    tagColor: 'text-[#f85149] border-[#f85149]/30 bg-[#f85149]/10',
   },
   {
-    index: '02',
-    label: 'Bob investigates',
-    detail: 'Calls Ripple tools to gather evidence',
-    calls: [
-      'check_service_health()',
-      'get_deployment_info()',
-      'get_recent_changes()',
-      'get_ci_status()',
-      'search_project_docs("database env var")',
-    ],
+    step: 2,
+    title: 'Git History Inspection',
+    tool: 'get_recent_changes()',
+    finding: 'Latest commit 6543c5e renamed environment variable DATABASE_URL to DB_URL.',
+    tag: 'DIFF FOUND',
+    tagColor: 'text-[#58a6ff] border-[#58a6ff]/30 bg-[#58a6ff]/10',
   },
   {
-    index: '03',
-    label: 'Ripple gathers evidence',
-    detail: 'Each tool returns structured data — no LLM inside Ripple',
-    evidence: [
-      { key: 'health', value: 'status: degraded · db unavailable' },
-      { key: 'deploy', value: 'version: 6543c5e · env: production' },
-      { key: 'git', value: 'changed: config.py · renamed DB var' },
-      { key: 'ci', value: 'status: failing · tests: failing' },
-      { key: 'docs', value: 'expects: DATABASE_URL' },
-    ],
+    step: 3,
+    title: 'Documentation Verification',
+    tool: 'search_project_docs("database config")',
+    finding: 'Runbook docs specify that the deployment environment injects DATABASE_URL.',
+    tag: 'DOC MATCH',
+    tagColor: 'text-[#d29922] border-[#d29922]/30 bg-[#d29922]/10',
   },
   {
-    index: '04',
-    label: 'Bob identifies root cause',
-    detail: 'Correlates evidence and reasons about the mismatch',
-    finding: 'config.py renamed DATABASE_URL → DB_URL\nEnvironment and docs still reference DATABASE_URL\nHealth check fails: database not connected',
-  },
-  {
-    index: '05',
-    label: 'Bob fixes the code',
-    detail: 'Restores the correct variable name in config.py',
-    diff: '-DB_URL = os.getenv("DB_URL")\n+DATABASE_URL = os.getenv("DATABASE_URL")',
-  },
-  {
-    index: '06',
-    label: 'Ripple creates the PR',
-    detail: 'Bob calls create_pull_request() through Ripple',
-    call: 'create_pull_request(\n  title="fix: restore DATABASE_URL env var name",\n  body="Resolves health degradation...",\n  head_branch="erick",\n  base_branch="main"\n)',
-    result: '→ PR #10 · open · https://github.com/Mechantchulo/Ripple-MCP/pull/10',
+    step: 4,
+    title: 'Automated Pull Request',
+    tool: 'create_pull_request("fix: restore DATABASE_URL", ...)',
+    finding: 'Agent automatically patches the mismatch and opens a GitHub PR ready for review.',
+    tag: 'PR CREATED',
+    tagColor: 'text-[#3fb950] border-[#3fb950]/30 bg-[#3fb950]/10',
   },
 ]
 
-export default function IncidentWorkflow() {
+export default function Demo() {
   return (
-    <section id="workflow" className="py-16 px-4 sm:px-6 border-b border-[#21262d]">
-      <div className="max-w-5xl mx-auto">
-
-        <div className="mb-10">
-          <p className="text-[#484f58] text-xs font-mono uppercase tracking-widest mb-2">incident workflow</p>
-          <h2 className="text-2xl font-bold text-[#e6edf3] mb-3">
-            From incident to merged fix
+    <section id="demo" className="border-b border-[#21262d] px-4 py-16 sm:px-6 sm:py-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-10 max-w-2xl">
+          <p className="mb-2 text-xs font-mono uppercase tracking-widest text-[#d29922]">Incident Walkthrough</p>
+          <h2 className="mb-3 text-3xl font-bold tracking-tight text-[#f0f6fc]">
+            One user prompt. Four systems investigated.
           </h2>
-          <p className="text-sm text-[#8b949e] max-w-xl leading-relaxed">
-            A controlled demo scenario: a config variable rename breaks the database connection.
-            Bob investigates using Ripple, identifies the root cause, fixes the code, and opens a PR.
+          <p className="text-sm leading-relaxed text-[#8b949e] sm:text-base">
+            In our hackathon demo scenario, a code refactor renamed a database variable, breaking the health check. See how the AI agent correlates evidence across Git, docs, and health checks to resolve it.
           </p>
         </div>
 
-        <div className="space-y-0 border border-[#21262d] rounded overflow-hidden">
-          {steps.map((s, i) => (
+        {/* Prompt Card with 1-Click Copy */}
+        <div className="mb-8 rounded-lg border border-[#388bfd]/40 bg-[#0d1f38]/30 p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-[#58a6ff]">
+              Developer prompt to IBM Bob / Claude
+            </span>
+            <CopyButton value={INCIDENT_PROMPT} label="Copy prompt" />
+          </div>
+          <p className="font-mono text-sm sm:text-base text-[#f0f6fc]">
+            “{INCIDENT_PROMPT}”
+          </p>
+        </div>
+
+        {/* Step-by-Step Flow */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map(item => (
             <div
-              key={s.index}
-              className={`flex gap-5 px-5 py-4 bg-[#161b22] ${i < steps.length - 1 ? 'border-b border-[#21262d]' : ''}`}
+              key={item.step}
+              className="flex flex-col justify-between rounded-lg border border-[#21262d] bg-[#161b22] p-4 transition-colors hover:border-[#30363d]"
             >
-              {/* Step number + connector */}
-              <div className="flex flex-col items-center pt-0.5">
-                <span className="text-[#484f58] text-xs font-mono w-5 text-center">{s.index}</span>
-                {i < steps.length - 1 && (
-                  <div className="w-px flex-1 bg-[#21262d] mt-2" />
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0 pb-1">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-[#e6edf3] text-sm font-medium">{s.label}</span>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#21262d] text-xs font-mono font-bold text-[#8b949e]">
+                    {item.step}
+                  </span>
+                  <span className={`rounded border px-2 py-0.5 text-[10px] font-mono font-medium ${item.tagColor}`}>
+                    {item.tag}
+                  </span>
                 </div>
-                <p className="text-[#8b949e] text-xs mb-3">{s.detail}</p>
-
-                {/* Prompt */}
-                {s.isPrompt && (
-                  <div className="bg-[#0d1117] border border-[#21262d] rounded px-3 py-2.5">
-                    <span className="text-[#484f58] text-xs font-mono">developer → IBM Bob</span>
-                    <p className="text-[#e6edf3] text-xs mt-1 italic">"{s.prompt}"</p>
-                  </div>
-                )}
-
-                {/* Tool calls */}
-                {s.calls && (
-                  <div className="bg-[#0d1117] border border-[#21262d] rounded overflow-hidden">
-                    <div className="px-3 py-1.5 border-b border-[#21262d]">
-                      <span className="text-[#484f58] text-xs font-mono">IBM Bob → Ripple MCP</span>
-                    </div>
-                    <div className="p-3 space-y-1">
-                      {s.calls.map(c => (
-                        <div key={c} className="flex items-center gap-2">
-                          <span className="text-[#3fb950] text-xs font-mono">›</span>
-                          <code className="text-[#58a6ff] text-xs font-mono">{c}</code>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Evidence */}
-                {s.evidence && (
-                  <div className="bg-[#0d1117] border border-[#21262d] rounded overflow-hidden">
-                    <div className="px-3 py-1.5 border-b border-[#21262d]">
-                      <span className="text-[#484f58] text-xs font-mono">Ripple → IBM Bob · structured data</span>
-                    </div>
-                    <div className="p-3 space-y-1">
-                      {s.evidence.map(e => (
-                        <div key={e.key} className="flex items-start gap-3 text-xs font-mono">
-                          <span className="text-[#484f58] w-12 shrink-0">{e.key}</span>
-                          <span className="text-[#8b949e]">{e.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Finding */}
-                {s.finding && (
-                  <div className="bg-[#0d1117] border border-[#d29922]/40 rounded px-3 py-2.5">
-                    <span className="text-[#d29922] text-xs font-mono">root cause</span>
-                    <pre className="text-[#8b949e] text-xs font-mono mt-1.5 whitespace-pre-wrap leading-relaxed">{s.finding}</pre>
-                  </div>
-                )}
-
-                {/* Diff */}
-                {s.diff && (
-                  <div className="bg-[#0d1117] border border-[#21262d] rounded overflow-hidden">
-                    <div className="px-3 py-1.5 border-b border-[#21262d]">
-                      <span className="text-[#484f58] text-xs font-mono">demo_app/app/config.py</span>
-                    </div>
-                    <div className="p-3">
-                      {s.diff.split('\n').map((line, li) => (
-                        <div
-                          key={li}
-                          className={`text-xs font-mono px-1 rounded ${line.startsWith('-') ? 'text-[#f85149] bg-[#f8514910]' : 'text-[#3fb950] bg-[#3fb95010]'}`}
-                        >
-                          {line}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* PR call */}
-                {s.call && (
-                  <div className="space-y-2">
-                    <div className="bg-[#0d1117] border border-[#21262d] rounded overflow-hidden">
-                      <div className="px-3 py-1.5 border-b border-[#21262d]">
-                        <span className="text-[#484f58] text-xs font-mono">IBM Bob → Ripple MCP</span>
-                      </div>
-                      <pre className="p-3 text-xs font-mono text-[#58a6ff] whitespace-pre-wrap leading-relaxed">{s.call}</pre>
-                    </div>
-                    <div className="flex items-center gap-2 px-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] shrink-0" />
-                      <code className="text-[#3fb950] text-xs font-mono">{s.result}</code>
-                    </div>
-                  </div>
-                )}
+                <h3 className="text-sm font-semibold text-[#f0f6fc]">{item.title}</h3>
+                <code className="mt-2 block rounded bg-[#0d1117] p-2 font-mono text-xs text-[#58a6ff] break-all border border-[#21262d]">
+                  {item.tool}
+                </code>
               </div>
+              <p className="mt-4 text-xs leading-relaxed text-[#8b949e]">{item.finding}</p>
             </div>
           ))}
         </div>
 
+        {/* Comparison: Without Ripple vs With Ripple */}
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          <div className="rounded-lg border border-[#f85149]/20 bg-[#161b22] p-5">
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-[#f85149]">
+              <span>✕</span> Without Ripple (Manual Frustration)
+            </h4>
+            <ul className="mt-3 space-y-2 text-xs text-[#8b949e] leading-relaxed">
+              <li className="flex gap-2"><span>1.</span> Open terminal to run <code className="text-[#c9d1d9]">git log -p</code> and copy commits.</li>
+              <li className="flex gap-2"><span>2.</span> Open browser tab to test <code className="text-[#c9d1d9]">/health</code> endpoint.</li>
+              <li className="flex gap-2"><span>3.</span> Open GitHub Actions tab to inspect why CI is red.</li>
+              <li className="flex gap-2"><span>4.</span> Search runbooks in Notion or wiki to check variable names.</li>
+              <li className="flex gap-2"><span>5.</span> Paste all 4 snippets into AI chat. 15 minutes wasted.</li>
+            </ul>
+          </div>
+
+          <div className="rounded-lg border border-[#238636]/30 bg-[#0d1f14] p-5">
+            <h4 className="flex items-center gap-2 text-sm font-semibold text-[#3fb950]">
+              <span>✓</span> With Ripple MCP (Instant Resolution)
+            </h4>
+            <ul className="mt-3 space-y-2 text-xs text-[#c9d1d9] leading-relaxed">
+              <li className="flex gap-2"><span>1.</span> Ask Bob or Claude one question in the chat.</li>
+              <li className="flex gap-2"><span>2.</span> Agent automatically queries Ripple’s 7 project tools.</li>
+              <li className="flex gap-2"><span>3.</span> Agent correlates Git diff, health failure, and runbook docs.</li>
+              <li className="flex gap-2"><span>4.</span> Agent writes the fix and creates a pull request.</li>
+              <li className="flex gap-2"><span>5.</span> Resolved in under 30 seconds with full traceability.</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </section>
   )
