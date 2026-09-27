@@ -14,6 +14,7 @@ Run locally:
 
 import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
@@ -27,25 +28,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-app = FastAPI(
-    title="Ripple Demo API",
-    description="Demo service for the Ripple MCP hackathon project.",
-    version="1.0.0",
-)
 
-app.include_router(health_router)
-app.include_router(auth_router)
-app.include_router(users_router)
-
-
-@app.on_event("startup")
-def on_startup() -> None:
+@asynccontextmanager
+async def lifespan(application: FastAPI):  # noqa: ARG001
     db_configured = bool(os.getenv("DATABASE_URL"))
     logger.info("ripple-demo-api starting up")
     if db_configured:
         logger.info("DATABASE_URL is configured — database layer is ready")
     else:
         logger.warning("DATABASE_URL is NOT configured — service will start in degraded state")
+    yield
+
+
+app = FastAPI(
+    title="Ripple Demo API",
+    description="Demo service for the Ripple MCP hackathon project.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.include_router(health_router)
+app.include_router(auth_router)
+app.include_router(users_router)
 
 
 @app.get("/")
