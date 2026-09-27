@@ -49,8 +49,9 @@ mcp = MCPServer(
         "Retrieves recent Git repository changes for the current project, "
         "including the latest commit hash, commit message, changed files, "
         "a diff excerpt, and a list of recent commits. "
-        "Use this when investigating regressions, failures after a change, "
-        "configuration changes, or determining what recently changed in the project."
+        "Use when investigating regressions, incidents, unhealthy deployments, "
+        "or any recent behavior change — especially when something broke and "
+        "you need to know what changed in the code just before it happened."
     ),
 )
 def get_recent_changes(max_commits: int = 5) -> dict:
@@ -64,10 +65,11 @@ def get_recent_changes(max_commits: int = 5) -> dict:
 @mcp.tool(
     name="check_service_health",
     description=(
-        "Checks the configured demo application's health endpoint and returns "
-        "current service availability and health information. "
-        "Use this when investigating runtime failures, degraded services, "
-        "deployment problems, or verifying whether the application recovered after a fix. "
+        "Checks the running demo application's health endpoint and returns "
+        "current availability, HTTP status, and any reported error. "
+        "Use when checking whether the application is currently healthy, "
+        "degraded, or unreachable — particularly during incident investigation, "
+        "after a deployment, or when the service is behaving unexpectedly. "
         "Optional parameter: url — override the health endpoint URL; "
         "defaults to the RIPPLE_HEALTH_URL environment variable "
         "(http://127.0.0.1:8000/health if not set)."
@@ -89,10 +91,12 @@ def check_service_health(url: str = "") -> dict:
 @mcp.tool(
     name="get_ci_status",
     description=(
-        "Returns the current CI pipeline status for the project, including "
-        "per-stage results and any failure details. "
-        "Use when investigating build failures, broken pipelines, or "
-        "verifying whether a recent fix passed CI."
+        "Returns the latest CI pipeline status for the project, including "
+        "overall pass/fail result, the triggering commit, per-stage results, "
+        "and a link to the pipeline run. "
+        "Use when investigating failed builds, release problems, regressions, "
+        "or unhealthy deployments — especially to determine whether the "
+        "current code is passing automated tests."
     ),
 )
 def get_ci_status() -> dict:
@@ -102,11 +106,11 @@ def get_ci_status() -> dict:
 @mcp.tool(
     name="get_deployment_info",
     description=(
-        "Returns the latest deployment record including version, environment, "
-        "deployment timestamp, status, and health-check outcome. "
-        "Use when investigating what is currently deployed, whether the "
-        "deployment is healthy, or comparing the deployed version against "
-        "recent commits."
+        "Returns the latest deployment record including deployed version, "
+        "environment, timestamp, deployment status, and health-check outcome. "
+        "Use when investigating deployment state, the currently deployed "
+        "version, or production incidents — particularly to determine whether "
+        "a degraded or failing service was already broken at deploy time."
     ),
 )
 def get_deployment_info() -> dict:
@@ -119,8 +123,10 @@ def get_deployment_info() -> dict:
         "Searches project Markdown documentation for sections relevant to the "
         "query using keyword scoring. Returns up to 3 matching sections with "
         "title, excerpt, and source filename. "
-        "Use when looking up architectural decisions, configuration variables, "
-        "runbook procedures, or any project reference documentation."
+        "Use when investigating configuration requirements, deployment "
+        "prerequisites, runbook procedures, architecture decisions, or "
+        "troubleshooting guidance — for example, to find what environment "
+        "variables the application expects."
     ),
 )
 def search_project_docs(query: str) -> dict:
