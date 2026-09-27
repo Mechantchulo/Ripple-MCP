@@ -1,9 +1,9 @@
 {
   "deployment_id": "deploy-14",
-  "version": "a1b2c3d",
+  "version": "b5469c6d224791b4f1d77dc24c9d27d749910b77",
   "environment": "production",
   "deployed_at": "2026-09-26T00:00:00+03:00",
   "deployed_by": "demo-pipeline",
-  "status": "degraded",
-  "health_check": "failed"
+  "status": "dhealthy",
+  "health_check": "passed"
 }
