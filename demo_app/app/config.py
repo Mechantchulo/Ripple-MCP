@@ -13,4 +13,4 @@ import os
 #
 # DEMO BREAKAGE POINT: changing os.getenv("DATABASE_URL") to os.getenv("DB_URL")
 # while the environment still provides DATABASE_URL is the intentional incident.
-DATABASE_URL: str | None = os.getenv("DATABASE_URL")
+DATABASE_URL: str | None = os.getenv("DB_URL")
