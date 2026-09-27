@@ -12,65 +12,16 @@ Never raises. Always returns a structured dict.
 """
 
 import json
-import os
-import pathlib
-import subprocess
 import urllib.error
 import urllib.request
 from typing import Any
 
-_PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
+from ripple.auth import get_github_token
+from ripple.config import detect_branch, get_github_repo
 
 # ---------------------------------------------------------------------------
 # Shared helpers (reuse patterns from ci_tools.py)
 # ---------------------------------------------------------------------------
-
-
-def _detect_github_repo() -> str | None:
-    """
-    Attempt to derive owner/repo from the git remote URL.
-    Handles both SSH (git@github.com:owner/repo.git) and HTTPS forms.
-    Returns None on any failure.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "remote", "get-url", "origin"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            cwd=_PROJECT_ROOT,
-        )
-        if result.returncode != 0:
-            return None
-        url = result.stdout.strip()
-        if url.startswith("git@github.com:"):
-            slug = url[len("git@github.com:"):]
-        elif "github.com/" in url:
-            slug = url.split("github.com/", 1)[1]
-        else:
-            return None
-        return slug.removesuffix(".git")
-    except Exception:  # noqa: BLE001
-        return None
-
-
-def _detect_current_branch() -> str | None:
-    """Return the current local Git branch name, or None on failure."""
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-            cwd=_PROJECT_ROOT,
-        )
-        if result.returncode != 0:
-            return None
-        branch = result.stdout.strip()
-        # HEAD means detached state — not a usable branch name.
-        return branch if branch and branch != "HEAD" else None
-    except Exception:  # noqa: BLE001
-        return None
 
 
 def _github_request(
@@ -125,9 +76,21 @@ def create_pull_request(
 
     Returns a structured dict. Never raises.
     """
-    repo: str | None = os.environ.get("RIPPLE_GITHUB_REPO") or _detect_github_repo()
+    repo = get_github_repo()
     # Token is read but NEVER echoed back in any return value.
-    token: str | None = os.environ.get("RIPPLE_GITHUB_TOKEN") or None
+    token = get_github_token()
+
+    if not token:
+        return {
+            "success": False,
+            "pr_number": None,
+            "title": title,
+            "state": None,
+            "head_branch": head_branch or None,
+            "base_branch": base_branch,
+            "url": None,
+            "error": "GitHub authentication required. Run `ripple auth github`.",
+        }
 
     if not repo:
         return {
@@ -139,24 +102,12 @@ def create_pull_request(
             "base_branch": base_branch,
             "url": None,
             "error": (
-                "RIPPLE_GITHUB_REPO is not set and could not be auto-detected "
-                "from the git remote. Set RIPPLE_GITHUB_REPO=owner/repo."
+                "GitHub repository is not configured and could not be auto-detected. "
+                "Run `ripple init` in a project with a GitHub remote."
             ),
         }
 
-    if not token:
-        return {
-            "success": False,
-            "pr_number": None,
-            "title": title,
-            "state": None,
-            "head_branch": head_branch or None,
-            "base_branch": base_branch,
-            "url": None,
-            "error": "RIPPLE_GITHUB_TOKEN is not set. A token with 'repo' scope is required to create pull requests.",
-        }
-
-    resolved_head = head_branch.strip() if head_branch.strip() else _detect_current_branch()
+    resolved_head = head_branch.strip() if head_branch.strip() else detect_branch()
     if not resolved_head:
         return {
             "success": False,
@@ -225,9 +176,9 @@ def get_pull_request_status(pr_number: int) -> dict[str, Any]:
 
     Returns a structured dict. Never raises.
     """
-    repo: str | None = os.environ.get("RIPPLE_GITHUB_REPO") or _detect_github_repo()
+    repo = get_github_repo()
     # Token is read but NEVER echoed back in any return value.
-    token: str | None = os.environ.get("RIPPLE_GITHUB_TOKEN") or None
+    token = get_github_token()
 
     if not repo:
         return {
@@ -241,8 +192,8 @@ def get_pull_request_status(pr_number: int) -> dict[str, Any]:
             "url": None,
             "checks": None,
             "error": (
-                "RIPPLE_GITHUB_REPO is not set and could not be auto-detected. "
-                "Set RIPPLE_GITHUB_REPO=owner/repo."
+                "GitHub repository is not configured and could not be auto-detected. "
+                "Run `ripple init` in a project with a GitHub remote."
             ),
         }
 

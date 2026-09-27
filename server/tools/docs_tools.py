@@ -3,19 +3,15 @@ docs_tools.py — Ripple MCP
 Provides search_project_docs(query): deterministic keyword search over docs/*.md.
 No LLM calls. No embeddings. No external APIs. Pure stdlib text matching.
 Never raises; always returns a structured dict.
+
+The docs/ directory is resolved relative to the CURRENT PROJECT (CWD),
+not the Ripple package installation directory.
 """
 
-import pathlib
 import re
 from typing import Any
 
-# Resolve project root from this file's location:
-#   __file__  = .../Ripple-MCP/server/tools/docs_tools.py
-#   parents[0] = .../server/tools/
-#   parents[1] = .../server/
-#   parents[2] = .../Ripple-MCP/   ← project root
-_PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
-_DOCS_DIR = _PROJECT_ROOT / "docs"
+from ripple.config import get_docs_dir
 
 # Common English stop words to skip when scoring
 _STOP_WORDS = {
@@ -113,12 +109,13 @@ def search_project_docs(query: str) -> dict[str, Any]:
     if not query_tokens:
         return empty_result
 
-    if not _DOCS_DIR.is_dir():
+    docs_dir = get_docs_dir()
+    if not docs_dir.is_dir():
         return empty_result
 
     scored: list[tuple[int, dict[str, str]]] = []
 
-    for md_path in sorted(_DOCS_DIR.glob("*.md")):
+    for md_path in sorted(docs_dir.glob("*.md")):
         try:
             text = md_path.read_text(encoding="utf-8")
         except OSError:

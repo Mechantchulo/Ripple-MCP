@@ -6,27 +6,42 @@ This is a demo Python web application built for the Ripple hackathon project. It
 
 ---
 
-## Local Development Architecture
+## Ripple Architecture
 
 ```
-Developer
-    │
-    ▼
-IBM Bob IDE
-    │  MCP (STDIO)
-    ▼
-Ripple MCP Server          ← exposes project tools to Bob
-    ├── get_recent_changes  ← reads local git history
-    ├── check_service_health ← HTTP GET /health on demo app
-    ├── get_ci_status       ← reads demo_data/ci_status.json
-    ├── get_deployment_info ← reads demo_data/deployment.json
-    └── search_project_docs ← keyword search over docs/*.md
+IBM Bob ───────────┐
+Other MCP client ──┼──> Ripple MCP ──> GitHub / CI / Health / Deployments / Docs
+IDE MCP client ────┘
+```
 
+Ripple is installed globally, while each project's configuration and data stay
+with that project:
+
+```text
+Global Ripple installation       Current project
+├── ripple CLI                   ├── .ripple/config.json
+└── MCP implementation           ├── .bob/mcp.json
+                                 ├── .git/
+                                 ├── docs/
+                                 └── application files
+```
+
+`ripple serve` resolves the current project from its working directory and
+exposes seven tools:
+
+```text
+get_recent_changes        check_service_health
+get_ci_status             get_deployment_info
+search_project_docs       create_pull_request
+get_pull_request_status
+```
+
+```text
 Demo Application           ← FastAPI, runs on http://127.0.0.1:8000
     └── PostgreSQL database ← connection string read from DATABASE_URL
 ```
 
-All components run locally. There is no cloud infrastructure in the current MVP.
+Ripple and the demo application run locally; GitHub tools call the GitHub API.
 
 ---
 
@@ -94,8 +109,8 @@ If the health-check stage fails, the overall workflow status is `failing`. The C
 
 | Component | Role |
 |-----------|------|
-| IBM Bob | AI coding and investigation agent — calls Ripple tools, correlates results, identifies root causes |
-| Ripple MCP | Project-specific tool server — exposes structured read-only context to Bob |
+| MCP client | IBM Bob or another STDIO-compatible client that calls Ripple tools |
+| Ripple MCP | Project-specific tool server — exposes structured context and authenticated GitHub writes |
 | Demo application | The subject of investigation — a FastAPI app with a PostgreSQL dependency |
 | `demo_data/*.json` | Synthetic CI and deployment fixtures representing the current pipeline and deployment state |
 | `docs/*.md` | Project documentation — architecture, configuration reference, and operational runbooks |

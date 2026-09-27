@@ -6,23 +6,21 @@ Never raises; always returns a structured dict.
 """
 
 import json
-import os
 import urllib.error
 import urllib.request
 from typing import Any
 
-_DEFAULT_HEALTH_URL = "http://127.0.0.1:8000/health"
 _TIMEOUT_SECONDS = 5
 
 
 def check_service_health(url: str | None = None) -> dict[str, Any]:
     """
-    Check the configured demo application's health endpoint.
+    Check the current project's configured health endpoint.
 
     Parameters:
         url (str, optional): Override the health endpoint URL.
-                             Defaults to the RIPPLE_HEALTH_URL environment variable,
-                             which itself defaults to http://127.0.0.1:8000/health.
+                             Defaults to project configuration (with the
+                             RIPPLE_HEALTH_URL environment variable overriding it).
 
     Returns a dict always containing at minimum:
         reachable (bool): whether the endpoint responded
@@ -32,7 +30,9 @@ def check_service_health(url: str | None = None) -> dict[str, Any]:
     Plus any additional fields from the JSON response body (if the service returns JSON).
     On connection failure returns {"reachable": false, "status": "unreachable", "error": "..."}.
     """
-    target_url = url or os.getenv("RIPPLE_HEALTH_URL", _DEFAULT_HEALTH_URL)
+    from ripple.config import get_health_url
+
+    target_url = url or get_health_url()
 
     try:
         req = urllib.request.Request(target_url, method="GET")

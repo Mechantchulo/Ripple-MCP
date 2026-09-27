@@ -13,7 +13,7 @@ const points = [
   },
   {
     title: 'Reusable project-specific tools',
-    body: 'Commit .bob/mcp.json to the repo. Every developer on the project gets the same tools automatically.',
+    body: 'Install Ripple once, then run ripple init in any repository. Each project keeps its own non-secret configuration.',
   },
   {
     title: 'IBM Bob remains central',

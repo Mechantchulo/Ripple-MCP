@@ -1,6 +1,30 @@
 # Ripple
 
-An MCP server that gives IBM Bob structured access to project-specific operational context — Git history, service health, CI state, deployment records, and documentation — so developers can investigate incidents without switching between multiple tools manually.
+An install-once MCP server that gives coding agents structured access to the current project's Git history, service health, CI state, deployment records, documentation, and GitHub pull requests.
+
+## Install once, use anywhere
+
+Install Ripple globally with [pipx](https://pipx.pypa.io/):
+
+```bash
+pipx install git+https://github.com/Mechantchulo/Ripple-MCP.git
+```
+
+From a local Ripple clone, the equivalent development install is `pipx install .`.
+
+Then initialize it from any Git project:
+
+```bash
+cd my-project
+ripple init
+ripple auth github   # needed for write operations such as creating a PR
+ripple doctor
+```
+
+`ripple init` creates project-specific, non-secret configuration in
+`.ripple/config.json` and configures IBM Bob in `.bob/mcp.json`. Authentication
+is stored outside the repository in the user's config directory. The
+`RIPPLE_GITHUB_TOKEN` environment variable remains available as an override.
 
 > Ripple turns fragmented project operations context into a single MCP interface for IBM Bob, so developers can investigate incidents without manually collecting information from multiple systems.
 
@@ -173,30 +197,27 @@ Searches local project Markdown documentation including architecture notes, conf
 
 The current implementation uses deterministic local text search — no embeddings, no additional LLM calls.
 
+### `create_pull_request(title, body, head_branch="", base_branch="main")`
+
+Creates a GitHub pull request for the current project. This write operation
+requires authentication from `ripple auth github` or `RIPPLE_GITHUB_TOKEN`.
+
+### `get_pull_request_status(pr_number)`
+
+Reads a pull request's state, merge information, branches, and CI checks.
+Public repositories can be queried without authentication where GitHub permits.
+
 ---
 
 ## Architecture
 
 ```text
-                    Developer
-                        │
-                        ▼
-                    IBM Bob
-                        │
-                      MCP
-                        │
-                        ▼
-                     Ripple
-            ┌───────────┼───────────┐
-            ▼           ▼           ▼
-          Git        CI/CD       Health
-            │           │           │
-            └──────┬────┴────┬──────┘
-                   ▼         ▼
-              Deployment   Docs
+IBM Bob ───────────┐
+Other MCP client ──┼──> Ripple MCP ──> GitHub / CI / Health / Deployments / Docs
+IDE MCP client ───┘
 ```
 
-- **IBM Bob** is the agent — it reasons, decides which tools to call, and produces the final answer.
+- **The MCP client** is the agent — IBM Bob is the demo client, but Ripple works with any STDIO MCP-compatible client.
 - **Ripple** is the MCP server — it exposes focused tools and returns structured data.
 - Ripple tools are **deterministic** — they read from Git, files, or HTTP endpoints.
 - Ripple **does not call another LLM**.
@@ -226,8 +247,12 @@ The current implementation uses deterministic local text search — no embedding
 
 ```text
 Ripple-MCP/
+├── ripple/
+│   ├── cli.py                     ← global CLI commands
+│   ├── config.py                  ← current-project discovery
+│   └── auth.py                    ← secure local token storage
 ├── .bob/
-│   └── mcp.json                  ← Bob project-level MCP configuration
+│   └── mcp.json                  ← Bob launches `ripple serve`
 ├── bob_sessions/                 ← Hackathon session screenshots
 │   └── README.md
 ├── server/
@@ -246,53 +271,84 @@ Ripple-MCP/
 │   ├── configuration.md
 │   └── runbook.md
 ├── .env.example
+├── pyproject.toml                     ← package and `ripple` entry point
 ├── requirements.txt
 └── README.md
 ```
 
-> **Note:** `ci_tools.py`, `deployment_tools.py`, `docs_tools.py`, `demo_data/`, and `docs/` are Person 2's scope and will be present in the merged branch.
-
 ---
 
-## How to Run Ripple
+## CLI commands
 
-**1. Clone the repository**
+| Command | Purpose |
+|---|---|
+| `ripple init` | Detect the current Git project and create `.ripple/config.json` plus Bob's `.bob/mcp.json` |
+| `ripple auth github` | Prompt without echo and securely store a GitHub token outside the project |
+| `ripple doctor` | Check installation, Git, GitHub, health endpoint, MCP readiness, and all seven tools |
+| `ripple serve` | Start Ripple as a standard STDIO MCP server using the current project |
 
-```bash
-git clone https://github.com/Mechantchulo/Ripple-MCP.git
-cd Ripple-MCP
+## MCP Client Configuration
+
+Ripple uses standard STDIO transport and connects to any MCP-compatible agent.
+
+### IBM Bob (`.bob/mcp.json`)
+
+Created automatically in your project by `ripple init`:
+
+```json
+{
+  "mcpServers": {
+    "ripple": {
+      "command": "ripple",
+      "args": ["serve"]
+    }
+  }
+}
 ```
 
-**2. Create and activate a virtual environment**
+### Claude Desktop (`claude_desktop_config.json`)
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "ripple": {
+      "command": "ripple",
+      "args": ["serve"]
+    }
+  }
+}
 ```
 
-**3. Install dependencies**
+### Cursor / Windsurf (`.cursor/mcp.json`)
 
-```bash
-pip install -r requirements.txt
+```json
+{
+  "mcpServers": {
+    "ripple": {
+      "command": "ripple",
+      "args": ["serve"]
+    }
+  }
+}
 ```
 
-**4. Configure environment variables (optional)**
+### Claude Code CLI
 
 ```bash
-cp .env.example .env
-# Edit .env if you need a non-default health endpoint URL
+claude mcp add ripple -- ripple serve
 ```
 
-**5. Connect Ripple to IBM Bob**
+### MCP Inspector (Browser UI)
 
-Open this project folder in the IBM Bob IDE. Bob automatically reads `.bob/mcp.json` and starts the Ripple MCP server as a child process over STDIO.
+Test all seven tools interactively:
 
-To verify:
-- Open Bob → Settings → MCP tab
-- Confirm `ripple` appears with status **connected**
-- Expand `ripple` — both `get_recent_changes` and `check_service_health` (and Person 2's tools after merge) should be listed
+```bash
+npx @modelcontextprotocol/inspector ripple serve
+```
 
-**6. Run the demo application (for health and deployment tests)**
+To run the bundled demo application for health and deployment tests:
 
 ```bash
 # From project root, once the demo app is available:
@@ -307,8 +363,8 @@ The following tests were performed during Person 1's implementation:
 
 | Test | Method | Result |
 |------|--------|--------|
-| Server startup | `echo "" \| python3 server/main.py` | Clean exit, no errors |
-| Tool discovery | `mcp.list_tools()` async call | Both tools registered with correct names, descriptions, and input schemas |
+| Server startup | `ripple serve` | Starts the STDIO MCP server cleanly |
+| Tool discovery | `mcp.list_tools()` async call | All seven tools registered with correct names, descriptions, and input schemas |
 | `get_recent_changes` — real repo data | Direct Python call + `mcp.call_tool()` | Returns commit hash, message, diff excerpt, recent commits |
 | `check_service_health` — online | In-process mock server on :8000 | Returns `{"reachable": true, "status": "healthy", ...}` |
 | `check_service_health` — offline | No server running | Returns `{"reachable": false, "status": "unreachable", "error": "..."}` — no crash |
@@ -352,12 +408,12 @@ ripple_<participant>_<description>.png
 ## Security and Data Handling
 
 - No secrets are hardcoded anywhere in the repository
-- Sensitive configuration is handled through environment variables documented in `.env.example`
+- GitHub tokens are entered with hidden input and stored outside the project with owner-only permissions on POSIX systems
+- `RIPPLE_GITHUB_TOKEN` overrides the locally stored token for CI and advanced setups
 - `.env` is excluded from version control via `.gitignore`
 - No client, confidential, or personal data is used
 - CI and deployment data for the hackathon MVP uses synthetic, controlled fixtures
-- All Ripple tools are **read-only** in the current MVP
-- MCP tool approval is kept **explicit** — `alwaysAllow` is empty in `.bob/mcp.json`, so Bob must ask before calling any tool
+- Pull-request creation requires GitHub authentication; public read-only GitHub requests work without it where GitHub allows
 
 ---
 
@@ -369,8 +425,8 @@ ripple_<participant>_<description>.png
 |--------|----------------------|
 | Git history | Local `git` binary via subprocess |
 | Service health | HTTP GET to local FastAPI app |
-| CI status | Local JSON fixture |
-| Deployment info | Local JSON fixture |
+| CI status | GitHub Actions, with a current-project fixture fallback |
+| Deployment info | Current-project JSON fixture |
 | Project docs | Local Markdown files, text search |
 
 **Future integrations could include:**
@@ -388,9 +444,9 @@ These are not implemented in the current MVP.
 
 ## Why MCP?
 
-MCP gives Ripple a standard interface for exposing project-specific tools to IBM Bob without building a custom integration for each tool. Bob discovers available tools at startup, calls them by name, and receives structured JSON responses it can reason over.
+MCP gives Ripple a standard interface for exposing project-specific tools to any compatible client without building a custom integration for each tool. The client discovers available tools at startup, calls them by name, and receives structured JSON responses it can reason over.
 
-The same Ripple server can be connected to any Bob session on the project simply by committing `.bob/mcp.json` to the repository. No per-developer setup is required beyond installing the Python dependencies.
+The same globally installed Ripple server can serve different projects because configuration, Git operations, docs, and data are resolved from the directory where `ripple serve` is launched.
 
 ---
 
