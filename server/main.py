@@ -3,8 +3,8 @@ main.py — Ripple MCP server entry point
 Initializes the MCPServer, registers all Ripple tools, and starts STDIO transport.
 
 Tool ownership:
-  Person 1: get_recent_changes, check_service_health  (implemented)
-  Person 2: get_ci_status, get_deployment_info, search_project_docs  (TODO — see below)
+  Person 1: get_recent_changes, check_service_health
+  Person 2: get_ci_status, get_deployment_info, search_project_docs
 """
 
 import sys
@@ -25,6 +25,9 @@ from mcp.server.mcpserver import MCPServer
 
 from server.tools.git_tools import get_recent_changes as _get_recent_changes
 from server.tools.health_tools import check_service_health as _check_service_health
+from server.tools.ci_tools import get_ci_status as _get_ci_status
+from server.tools.deployment_tools import get_deployment_info as _get_deployment_info
+from server.tools.docs_tools import search_project_docs as _search_project_docs
 
 mcp = MCPServer(
     name="ripple",
@@ -80,45 +83,52 @@ def check_service_health(url: str = "") -> dict:
 
 
 # ---------------------------------------------------------------------------
-# TODO (Person 2) — register these three tools after merge:
-#
-# from server.tools.ci_tools import get_ci_status as _get_ci_status
-# from server.tools.deployment_tools import get_deployment_info as _get_deployment_info
-# from server.tools.docs_tools import search_project_docs as _search_project_docs
-#
-# @mcp.tool(
-#     name="get_ci_status",
-#     description=(
-#         "Returns the current CI pipeline status for recent commits. "
-#         "Use when investigating build failures, broken pipelines, or "
-#         "verifying whether a fix passed CI."
-#     ),
-# )
-# def get_ci_status(...) -> dict:
-#     return _get_ci_status(...)
-#
-# @mcp.tool(
-#     name="get_deployment_info",
-#     description=(
-#         "Returns the latest deployment information including version, "
-#         "environment, and deployment timestamp. "
-#         "Use when investigating what is currently deployed or comparing "
-#         "the deployed version against recent commits."
-#     ),
-# )
-# def get_deployment_info(...) -> dict:
-#     return _get_deployment_info(...)
-#
-# @mcp.tool(
-#     name="search_project_docs",
-#     description=(
-#         "Searches project documentation for relevant information. "
-#         "Use when looking up architectural decisions, runbooks, "
-#         "or configuration reference documentation."
-#     ),
-# )
-# def search_project_docs(...) -> dict:
-#     return _search_project_docs(...)
+# Person 2 tools
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="get_ci_status",
+    description=(
+        "Returns the current CI pipeline status for the project, including "
+        "per-stage results and any failure details. "
+        "Use when investigating build failures, broken pipelines, or "
+        "verifying whether a recent fix passed CI."
+    ),
+)
+def get_ci_status() -> dict:
+    return _get_ci_status()
+
+
+@mcp.tool(
+    name="get_deployment_info",
+    description=(
+        "Returns the latest deployment record including version, environment, "
+        "deployment timestamp, status, and health-check outcome. "
+        "Use when investigating what is currently deployed, whether the "
+        "deployment is healthy, or comparing the deployed version against "
+        "recent commits."
+    ),
+)
+def get_deployment_info() -> dict:
+    return _get_deployment_info()
+
+
+@mcp.tool(
+    name="search_project_docs",
+    description=(
+        "Searches project Markdown documentation for sections relevant to the "
+        "query using keyword scoring. Returns up to 3 matching sections with "
+        "title, excerpt, and source filename. "
+        "Use when looking up architectural decisions, configuration variables, "
+        "runbook procedures, or any project reference documentation."
+    ),
+)
+def search_project_docs(query: str) -> dict:
+    """
+    Args:
+        query: Natural-language search terms (e.g. "database environment variable").
+    """
+    return _search_project_docs(query=query)
 # ---------------------------------------------------------------------------
 
 
