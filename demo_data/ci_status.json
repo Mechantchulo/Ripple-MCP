@@ -1,12 +1,12 @@
 {
+  "source": "demo-fixture",
   "workflow": "CI",
-  "status": "failing",
-  "commit": "a1b2c3d",
+  "status": "passing",
+  "commit": null,
   "pipeline_url": null,
   "stages": [
-    {"name": "lint", "status": "passing"},
-    {"name": "tests", "status": "passing"},
-    {"name": "health-check", "status": "failing"}
+    {"name": "tests", "status": "passing"}
   ],
-  "error": "Health check stage failed: application reported database unavailable"
+  "error": null,
+  "_note": "Healthy baseline fixture. Update commit + pipeline_url + status after the real breaking CI run exists."
 }
