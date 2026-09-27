@@ -5,6 +5,7 @@ Initializes the MCPServer, registers all Ripple tools, and starts STDIO transpor
 Tool ownership:
   Person 1: get_recent_changes, check_service_health
   Person 2: get_ci_status, get_deployment_info, search_project_docs
+  GitHub PR: create_pull_request, get_pull_request_status
 """
 
 import sys
@@ -28,13 +29,17 @@ from server.tools.health_tools import check_service_health as _check_service_hea
 from server.tools.ci_tools import get_ci_status as _get_ci_status
 from server.tools.deployment_tools import get_deployment_info as _get_deployment_info
 from server.tools.docs_tools import search_project_docs as _search_project_docs
+from server.tools.github_tools import (
+    create_pull_request as _create_pull_request,
+    get_pull_request_status as _get_pull_request_status,
+)
 
 mcp = MCPServer(
     name="ripple",
     description=(
         "Ripple — project-specific developer tools for IBM Bob. "
         "Provides access to Git history, service health, CI status, "
-        "deployment information, and project documentation."
+        "deployment information, project documentation, and GitHub pull requests."
     ),
 )
 
@@ -135,6 +140,56 @@ def search_project_docs(query: str) -> dict:
         query: Natural-language search terms (e.g. "database environment variable").
     """
     return _search_project_docs(query=query)
+# ---------------------------------------------------------------------------
+# GitHub PR tools
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="create_pull_request",
+    description=(
+        "Use when code changes are ready for review and need to be proposed to "
+        "another branch. Creates a GitHub pull request and returns its number, "
+        "URL, source branch, target branch, and state."
+    ),
+)
+def create_pull_request(
+    title: str,
+    body: str,
+    head_branch: str = "",
+    base_branch: str = "main",
+) -> dict:
+    """
+    Args:
+        title:       PR title (required).
+        body:        PR description / body text (required).
+        head_branch: Branch containing the changes. Auto-detected from the
+                     current local git branch when omitted.
+        base_branch: Target branch for the PR (default: "main").
+    """
+    return _create_pull_request(
+        title=title,
+        body=body,
+        head_branch=head_branch,
+        base_branch=base_branch,
+    )
+
+
+@mcp.tool(
+    name="get_pull_request_status",
+    description=(
+        "Use when checking whether a proposed fix has been reviewed, merged, "
+        "blocked, or still has failing checks. Returns PR state, merge status, "
+        "CI check results, and the GitHub URL."
+    ),
+)
+def get_pull_request_status(pr_number: int) -> dict:
+    """
+    Args:
+        pr_number: The GitHub pull request number (integer).
+    """
+    return _get_pull_request_status(pr_number=pr_number)
+
+
 # ---------------------------------------------------------------------------
 
 
