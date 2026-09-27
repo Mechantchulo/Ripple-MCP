@@ -1,81 +1,107 @@
-const facts = [
-  { label: 'Agent', value: 'IBM Bob IDE', note: 'All reasoning happens here' },
-  { label: 'Interface', value: 'Model Context Protocol (MCP)', note: 'Standard tool protocol' },
-  { label: 'Transport', value: 'STDIO (local)', note: 'Bob starts Ripple as a child process' },
-  { label: 'Server language', value: 'Python 3.11+', note: 'mcp SDK v2.2.0' },
+const specs = [
+  { label: 'Protocol', value: 'Model Context Protocol (MCP)', note: 'Tool call standard' },
+  { label: 'Transport', value: 'STDIO', note: 'Bob spawns Ripple as a child process' },
+  { label: 'Server', value: 'Python 3.11+ / mcp SDK v2.2', note: 'server/main.py' },
   { label: 'Tool behaviour', value: 'Deterministic', note: 'No LLM inside Ripple' },
-  { label: 'Tool approval', value: 'Explicit', note: 'alwaysAllow: [] Bob asks before calling' },
+  { label: 'Auth', value: 'Explicit approval', note: 'alwaysAllow: [] — Bob asks before each call' },
+  { label: 'Tools registered', value: '7', note: 'All in server/tools/' },
+]
+
+const sources = [
+  { label: 'GitHub Actions', sub: 'CI status' },
+  { label: 'Git (local)', sub: 'Recent changes' },
+  { label: 'Health API', sub: 'Service health' },
+  { label: 'Deployment', sub: 'Deploy state' },
+  { label: 'Markdown docs', sub: 'Project docs' },
+  { label: 'GitHub REST', sub: 'Pull requests' },
 ]
 
 export default function Architecture() {
   return (
-    <section id="architecture" className="py-20 px-4 sm:px-6 border-t border-gray-800">
+    <section id="architecture" className="py-16 px-4 sm:px-6 border-b border-[#21262d]">
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-12">
-          <p className="text-teal-400 text-sm font-medium uppercase tracking-widest mb-3">Architecture</p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+
+        {/* Section header */}
+        <div className="mb-10">
+          <p className="text-[#484f58] text-xs font-mono uppercase tracking-widest mb-2">architecture</p>
+          <h2 className="text-2xl font-bold text-[#e6edf3] mb-3">
             How Ripple fits into the stack
           </h2>
-          <p className="text-gray-400 max-w-2xl text-base leading-relaxed">
-            IBM Bob is the agent. Ripple is the MCP server. Bob decides which tools to invoke and when.
+          <p className="text-sm text-[#8b949e] max-w-xl leading-relaxed">
+            IBM Bob is the agent. Ripple is the MCP server. Bob decides which tools to invoke and when —
+            Ripple only responds, never initiates.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-10 items-start">
-          {/* Diagram */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 font-mono text-sm">
-            <p className="text-gray-500 text-xs mb-4 uppercase tracking-wider">Component diagram</p>
-            <div className="space-y-1 text-gray-300 leading-relaxed">
-              <p className="text-center">
-                <span className="bg-gray-800 px-3 py-1 rounded text-white">Developer</span>
-              </p>
-              <p className="text-center text-gray-600">│</p>
-              <p className="text-center text-gray-600">▼</p>
-              <p className="text-center">
-                <span className="bg-teal-950 border border-teal-700 px-3 py-1 rounded text-teal-300">IBM Bob</span>
-              </p>
-              <p className="text-center text-gray-600">│</p>
-              <p className="text-center text-gray-500 text-xs">MCP / STDIO</p>
-              <p className="text-center text-gray-600">│</p>
-              <p className="text-center text-gray-600">▼</p>
-              <p className="text-center">
-                <span className="bg-gray-800 border border-gray-700 px-3 py-1 rounded text-white">Ripple MCP Server</span>
-              </p>
-              <p className="text-center text-gray-600">│</p>
-              <p className="text-center text-gray-600">▼</p>
-              {/* Sources row */}
-              <div className="flex flex-wrap justify-center gap-2 mt-2">
-                {['Git', 'CI/CD', 'Health', 'Deployment', 'Docs'].map(s => (
-                  <span key={s} className="bg-gray-800 border border-gray-700 px-2 py-1 rounded text-xs text-gray-400">
-                    {s}
-                  </span>
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+
+          {/* Flow diagram */}
+          <div className="border border-[#21262d] rounded bg-[#161b22]">
+            <div className="px-4 py-2.5 border-b border-[#21262d] flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#21262d]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#21262d]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[#21262d]" />
+              </div>
+              <span className="text-[#484f58] text-xs font-mono ml-1">ripple-architecture.txt</span>
+            </div>
+            <div className="p-5 font-mono text-sm space-y-1">
+              <div className="text-center">
+                <span className="text-[#8b949e] text-xs">Developer</span>
+              </div>
+              <div className="text-center text-[#30363d] text-xs">│</div>
+              <div className="text-center text-[#30363d] text-xs">▼  prompt</div>
+              <div className="text-center">
+                <span className="text-[#e6edf3] bg-[#0d419d] border border-[#1f6feb] px-4 py-1 rounded text-xs inline-block">
+                  IBM Bob
+                </span>
+              </div>
+              <div className="text-center text-[#30363d] text-xs">│</div>
+              <div className="text-center text-[#484f58] text-xs">MCP tool call · STDIO</div>
+              <div className="text-center text-[#30363d] text-xs">▼</div>
+              <div className="text-center">
+                <span className="text-[#e6edf3] bg-[#161b22] border border-[#30363d] px-4 py-1 rounded text-xs inline-block">
+                  Ripple MCP Server
+                </span>
+              </div>
+              <div className="text-center text-[#30363d] text-xs">│</div>
+              <div className="text-center text-[#30363d] text-xs">▼  dispatches to</div>
+              {/* Sources grid */}
+              <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+                {sources.map(s => (
+                  <div key={s.label} className="border border-[#21262d] rounded px-2.5 py-1.5 text-center">
+                    <div className="text-[#8b949e] text-xs">{s.label}</div>
+                    <div className="text-[#484f58] text-xs">{s.sub}</div>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Facts */}
-          <div className="space-y-4">
-            {facts.map(f => (
-              <div key={f.label} className="flex items-start gap-4">
-                <div className="w-2 h-2 rounded-full bg-teal-500 mt-2 shrink-0" />
+          {/* Specs */}
+          <div className="space-y-0 border border-[#21262d] rounded overflow-hidden">
+            {specs.map((s, i) => (
+              <div
+                key={s.label}
+                className={`flex items-start gap-4 px-4 py-3 bg-[#161b22] ${i < specs.length - 1 ? 'border-b border-[#21262d]' : ''}`}
+              >
+                <div className="w-28 shrink-0">
+                  <span className="text-[#484f58] text-xs font-mono">{s.label}</span>
+                </div>
                 <div>
-                  <span className="text-gray-500 text-xs uppercase tracking-wider">{f.label}</span>
-                  <p className="text-white text-sm font-medium">{f.value}</p>
-                  <p className="text-gray-500 text-xs">{f.note}</p>
+                  <div className="text-[#e6edf3] text-xs font-mono">{s.value}</div>
+                  <div className="text-[#484f58] text-xs mt-0.5">{s.note}</div>
                 </div>
               </div>
             ))}
-
-            <div className="mt-6 p-4 bg-gray-900 border border-gray-800 rounded-lg">
-              <p className="text-xs text-gray-400 leading-relaxed">
-                <span className="text-teal-400 font-medium">Bob decides everything.</span>{' '}
-                Ripple does not initiate conversations, push notifications  or call Bob.
-                It only responds when Bob calls a tool.
+            <div className="px-4 py-3 bg-[#0d1117] border-t border-[#21262d]">
+              <p className="text-[#484f58] text-xs font-mono leading-relaxed">
+                # Ripple does not diagnose, decide, or initiate.<br />
+                # It retrieves. Bob reasons.
               </p>
             </div>
           </div>
+
         </div>
       </div>
     </section>
